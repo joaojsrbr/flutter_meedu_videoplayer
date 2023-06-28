@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_meedu_videoplayer/meedu_player.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_meedu_videoplayer/meedu_player.dart';
 
-Map<ShortcutActivator, void Function()> activatorsToCallBacks(
-    MeeduPlayerController controller, BuildContext context) {
+Map<ShortcutActivator, void Function()> activatorsToCallBacks(MeeduPlayerController controller, BuildContext context) {
   return {
     const SingleActivator(LogicalKeyboardKey.arrowUp): () {
       if (!controller.enabledControls.volumeArrows) {
