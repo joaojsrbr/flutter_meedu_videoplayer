@@ -4,6 +4,7 @@ import 'package:flutter_meedu_videoplayer/src/widgets/styles/controls_container.
 import 'package:flutter_meedu_videoplayer/src/widgets/styles/primary/primary_list_player_controls.dart';
 import 'package:flutter_meedu_videoplayer/src/widgets/styles/primary/primary_player_controls.dart';
 import 'package:flutter_meedu_videoplayer/src/widgets/styles/secondary/secondary_player_controls.dart';
+
 import '../helpers/shortcuts/intent_action_map.dart';
 
 /// An ActionDispatcher that logs all the actions that it invokes.
@@ -21,8 +22,10 @@ class LoggingActionDispatcher extends ActionDispatcher {
   }
 }
 
-class MeeduVideoPlayer extends StatefulWidget {
+class MeeduVideoPlayer extends StatelessWidget {
   final MeeduPlayerController controller;
+
+  final FocusNode? focusNode;
 
   final Widget Function(
     BuildContext context,
@@ -48,8 +51,7 @@ class MeeduVideoPlayer extends StatefulWidget {
   )? customControls;
 
   ///[customCaptionView] when a custom view for the captions is needed
-  final Widget Function(BuildContext context, MeeduPlayerController controller,
-      Responsive responsive, String text)? customCaptionView;
+  final Widget Function(BuildContext context, MeeduPlayerController controller, Responsive responsive, String text)? customCaptionView;
 
   /// The distance from the bottom of the screen to the closed captions text.
   ///
@@ -67,6 +69,7 @@ class MeeduVideoPlayer extends StatefulWidget {
       {Key? key,
       required this.controller,
       this.header,
+      this.focusNode,
       this.bottomRight,
       this.customIcons,
       this.customControls,
@@ -74,11 +77,6 @@ class MeeduVideoPlayer extends StatefulWidget {
       this.closedCaptionDistanceFromBottom = 40})
       : super(key: key);
 
-  @override
-  State<MeeduVideoPlayer> createState() => _MeeduVideoPlayerState();
-}
-
-class _MeeduVideoPlayerState extends State<MeeduVideoPlayer> {
   double videoWidth(VideoPlayerController? controller) {
     double width = controller != null
         ? controller.value.size.width != 0
@@ -110,16 +108,17 @@ class _MeeduVideoPlayerState extends State<MeeduVideoPlayer> {
   @override
   Widget build(BuildContext context) {
     return CallbackShortcuts(
-      bindings: activatorsToCallBacks(widget.controller, context),
+      bindings: activatorsToCallBacks(controller, context),
       child: Focus(
+        focusNode: focusNode,
         autofocus: true,
         child: MeeduPlayerProvider(
-          controller: widget.controller,
-          child: Container(
-              color: Colors.black,
+          controller: controller,
+          child: DecoratedBox(
+              decoration: const BoxDecoration(color: Colors.black),
               child: LayoutBuilder(
                 builder: (ctx, constraints) {
-                  MeeduPlayerController _ = widget.controller;
+                  MeeduPlayerController _ = controller;
                   if (_.controlsEnabled) {
                     _.responsive.setDimensions(
                       constraints.maxWidth,
@@ -127,22 +126,20 @@ class _MeeduVideoPlayerState extends State<MeeduVideoPlayer> {
                     );
                   }
 
-                  if (widget.customIcons != null) {
-                    _.customIcons = widget.customIcons!(_.responsive);
+                  if (customIcons != null) {
+                    _.customIcons = customIcons!(_.responsive);
                   }
 
-                  if (widget.header != null) {
-                    _.header = widget.header!(context, _, _.responsive);
+                  if (header != null) {
+                    _.header = header!(context, _, _.responsive);
                   }
 
-                  if (widget.bottomRight != null) {
-                    _.bottomRight =
-                        widget.bottomRight!(context, _, _.responsive);
+                  if (bottomRight != null) {
+                    _.bottomRight = bottomRight!(context, _, _.responsive);
                   }
 
-                  if (widget.customControls != null) {
-                    _.customControls =
-                        widget.customControls!(context, _, _.responsive);
+                  if (customControls != null) {
+                    _.customControls = customControls!(context, _, _.responsive);
                   }
                   return ExcludeFocus(
                     excluding: _.excludeFocus,
@@ -155,8 +152,7 @@ class _MeeduVideoPlayerState extends State<MeeduVideoPlayer> {
                             //observables: [_.videoFit],
                             (__) {
                           _.dataStatus.status.value;
-                          _.customDebugPrint(
-                              "Fit is ${widget.controller.videoFit.value}");
+                          _.customDebugPrint("Fit is ${controller.videoFit.value}");
                           // customDebugPrint(
                           //     "constraints.maxWidth ${constraints.maxWidth}");
                           // _.customDebugPrint(
@@ -166,7 +162,7 @@ class _MeeduVideoPlayerState extends State<MeeduVideoPlayer> {
                           return Positioned.fill(
                             child: FittedBox(
                               clipBehavior: Clip.hardEdge,
-                              fit: widget.controller.videoFit.value,
+                              fit: controller.videoFit.value,
                               child: SizedBox(
                                 width: videoWidth(
                                   _.videoPlayerController,
@@ -176,41 +172,25 @@ class _MeeduVideoPlayerState extends State<MeeduVideoPlayer> {
                                 ),
                                 // width: 640,
                                 // height: 480,
-                                child: _.videoPlayerController != null
-                                    ? VideoPlayer(_.videoPlayerController!)
-                                    : Container(),
+                                child: _.videoPlayerController != null ? VideoPlayer(_.videoPlayerController!) : const SizedBox.shrink(),
                               ),
                             ),
                           );
                         }),
                         ClosedCaptionView(
                           responsive: _.responsive,
-                          distanceFromBottom:
-                              widget.closedCaptionDistanceFromBottom,
-                          customCaptionView: widget.customCaptionView,
+                          distanceFromBottom: closedCaptionDistanceFromBottom,
+                          customCaptionView: customCaptionView,
                         ),
-                        if (_.controlsEnabled &&
-                            _.controlsStyle == ControlsStyle.primary)
-                          PrimaryVideoPlayerControls(
-                            responsive: _.responsive,
-                          ),
-                        if (_.controlsEnabled &&
-                            _.controlsStyle == ControlsStyle.primaryList)
-                          PrimaryListVideoPlayerControls(
-                            responsive: _.responsive,
-                          ),
-                        if (_.controlsEnabled &&
-                            _.controlsStyle == ControlsStyle.secondary)
-                          SecondaryVideoPlayerControls(
-                            responsive: _.responsive,
-                          ),
-                        if (_.controlsEnabled &&
-                            _.controlsStyle == ControlsStyle.custom &&
-                            _.customControls != null)
-                          ControlsContainer(
-                            responsive: _.responsive,
-                            child: _.customControls!,
-                          )
+                        if (_.controlsEnabled && _.controlsStyle == ControlsStyle.primary)
+                          PrimaryVideoPlayerControls(responsive: _.responsive)
+                        else if (_.controlsEnabled && _.controlsStyle == ControlsStyle.primaryList)
+                          PrimaryListVideoPlayerControls(responsive: _.responsive)
+                        else if (_.controlsEnabled && _.controlsStyle == ControlsStyle.secondary)
+                          SecondaryVideoPlayerControls(responsive: _.responsive)
+                        else if (_.controlsEnabled && _.controlsStyle == ControlsStyle.custom && _.customControls != null)
+                          ControlsContainer(responsive: _.responsive, child: _.customControls!),
+                        if (_.stackWidget != null) _.stackWidget!,
                       ],
                     ),
                   );
@@ -219,16 +199,6 @@ class _MeeduVideoPlayerState extends State<MeeduVideoPlayer> {
         ),
       ),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
 

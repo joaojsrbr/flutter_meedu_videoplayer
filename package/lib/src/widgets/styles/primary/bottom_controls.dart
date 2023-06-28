@@ -5,62 +5,51 @@ import 'package:universal_platform/universal_platform.dart';
 
 class PrimaryBottomControls extends StatelessWidget {
   final Responsive responsive;
-  const PrimaryBottomControls({Key? key, required this.responsive})
-      : super(key: key);
+  const PrimaryBottomControls({Key? key, required this.responsive}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final _ = MeeduPlayerController.of(context);
-    final textStyle = TextStyle(
-      color: Colors.white,
-      fontSize: responsive.fontSize(),
-    );
+    final textStyle = _.defaultTextStyle?.copyWith(
+          fontSize: responsive.fontSize(),
+        ) ??
+        TextStyle(
+          color: Colors.white,
+          fontSize: responsive.fontSize(),
+        );
     Widget durationControls = Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RxBuilder(
-                //observables: [_.duration, _.position],
-                (__) {
-              return Text(
-                _.duration.value.inMinutes >= 60
-                    ? printDurationWithHours(_.position.value)
-                    : printDuration(_.position.value),
-                style: textStyle,
-              );
-            }),
-            // END VIDEO POSITION
-            const SizedBox(width: 10),
-            const Expanded(
-              child: PlayerSlider(),
-            ),
-            const SizedBox(width: 10),
-            // START VIDEO DURATION
-            RxBuilder(
-              //observables: [_.duration],
-              (__) => Text(
-                _.duration.value.inMinutes >= 60
-                    ? printDurationWithHours(_.duration.value)
-                    : printDuration(_.duration.value),
-                style: textStyle,
-              ),
-            ),
-          ]),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, mainAxisSize: MainAxisSize.min, children: [
+        RxBuilder(
+            //observables: [_.duration, _.position],
+            (__) {
+          return Text(
+            _.duration.value.inMinutes >= 60 ? printDurationWithHours(_.position.value) : printDuration(_.position.value),
+            style: textStyle,
+          );
+        }),
+        // END VIDEO POSITION
+        const SizedBox(width: 10),
+        const Expanded(child: PlayerSlider()),
+        const SizedBox(width: 10),
+        // START VIDEO DURATION
+        RxBuilder(
+          //observables: [_.duration],
+          (__) => Text(
+            _.duration.value.inMinutes >= 60 ? printDurationWithHours(_.duration.value) : printDuration(_.duration.value),
+            style: textStyle,
+          ),
+        ),
+      ]),
     );
     // END VIDEO DURATION
-    Widget otherControls =
-        Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+    Widget otherControls = Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
       if (_.bottomRight != null) ...[_.bottomRight!, const SizedBox(width: 5)],
       if (_.enabledButtons.pip) PipButton(responsive: responsive),
-      if (!UniversalPlatform.isDesktopOrWeb && _.enabledButtons.lockControls)
-        LockButton(responsive: responsive),
+      if (!UniversalPlatform.isDesktopOrWeb && _.enabledButtons.lockControls) LockButton(responsive: responsive),
       if (_.enabledButtons.videoFit) VideoFitButton(responsive: responsive),
-      if (_.enabledButtons.playBackSpeed)
-        PlayBackSpeedButton(responsive: responsive, textStyle: textStyle),
-      if (_.enabledButtons.muteAndSound)
-        MuteSoundButton(responsive: responsive),
+      if (_.enabledButtons.playBackSpeed) PlayBackSpeedButton(responsive: responsive, textStyle: textStyle),
+      if (_.enabledButtons.muteAndSound) MuteSoundButton(responsive: responsive),
       if (_.enabledButtons.fullscreen)
         FullscreenButton(
           size: responsive.buttonSize(),

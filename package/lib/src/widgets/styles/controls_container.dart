@@ -58,8 +58,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
   final ValueNotifier<double> _currentBrightness = ValueNotifier<double>(1.0);
 
   //------------------------------------//
-  void _forwardDragStart(
-      Offset localPosition, MeeduPlayerController controller) async {
+  void _forwardDragStart(Offset localPosition, MeeduPlayerController controller) async {
     playing = controller.playerStatus.playing;
     controller.pause();
     //_initialForwardPosition = controller.position.value;
@@ -83,14 +82,11 @@ class _ControlsContainerState extends State<ControlsContainer> {
     }
   }
 
-  void _rewind(BuildContext context, MeeduPlayerController controller) =>
-      _showRewindAndForward(context, 0, controller);
+  void _rewind(BuildContext context, MeeduPlayerController controller) => _showRewindAndForward(context, 0, controller);
 
-  void _forward(BuildContext context, MeeduPlayerController controller) =>
-      _showRewindAndForward(context, 1, controller);
+  void _forward(BuildContext context, MeeduPlayerController controller) => _showRewindAndForward(context, 1, controller);
 
-  void _showRewindAndForward(
-      BuildContext context, int index, MeeduPlayerController controller) async {
+  void _showRewindAndForward(BuildContext context, int index, MeeduPlayerController controller) async {
     //controller.videoSeekToNextSeconds(amount);
     if (index == 0) {
       controller.doubleTapCount.value += 1;
@@ -114,8 +110,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
     _doubleTapToSeekTimer?.cancel();
     _doubleTapToSeekTimer = Timer(const Duration(milliseconds: 500), () {
       playing = controller.playerStatus.playing;
-      controller.videoSeekToNextSeconds(
-          _defaultSeekAmount * controller.doubleTapCount.value, playing);
+      controller.videoSeekToNextSeconds(_defaultSeekAmount * controller.doubleTapCount.value, playing);
       controller.customDebugPrint("set tapped Twice to false");
       tappedTwice = false;
       controller.rewindIcons.value = false;
@@ -124,8 +119,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
     });
   }
 
-  void _forwardDragUpdate(
-      Offset localPosition, MeeduPlayerController controller) {
+  void _forwardDragUpdate(Offset localPosition, MeeduPlayerController controller) {
     final double diff = _horizontalDragStartOffset.dx - localPosition.dx;
     final int duration = controller.duration.value.inSeconds;
     final int position = controller.position.value.inSeconds;
@@ -139,21 +133,16 @@ class _ControlsContainerState extends State<ControlsContainer> {
   void _forwardDragEnd(MeeduPlayerController controller) async {
     _dragInitialDelta = Offset.zero;
     if (controller.swipeDuration.value != 0) {
-      await controller.videoSeekToNextSeconds(
-          controller.swipeDuration.value, playing);
+      await controller.videoSeekToNextSeconds(controller.swipeDuration.value, playing);
     }
     controller.showSwipeDuration.value = false;
   }
 
   //----------------------------//
-  void _volumeDragUpdate(
-      Offset localPosition, MeeduPlayerController controller) {
+  void _volumeDragUpdate(Offset localPosition, MeeduPlayerController controller) {
     double diff = _verticalDragStartOffset.dy - localPosition.dy;
     double volume = (diff / 500) + _onDragStartVolume;
-    if (volume >= 0 &&
-        volume <= 1 &&
-        differenceOfExists((controller.volume.value * 100).round(),
-            (volume * 100).round(), 2)) {
+    if (volume >= 0 && volume <= 1 && differenceOfExists((controller.volume.value * 100).round(), (volume * 100).round(), 2)) {
       controller.customDebugPrint("Volume $volume");
       //customDebugPrint("current ${(controller.volume.value*100).round()}");
       //customDebugPrint("new ${(volume*100).round()}");
@@ -161,8 +150,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
     }
   }
 
-  void _volumeDragStart(
-      Offset localPosition, MeeduPlayerController controller) {
+  void _volumeDragStart(Offset localPosition, MeeduPlayerController controller) {
     controller.showVolumeStatus.value = true;
     controller.showBrightnessStatus.value = false;
     isVolume = true;
@@ -177,11 +165,8 @@ class _ControlsContainerState extends State<ControlsContainer> {
     controller.showVolumeStatus.value = false;
   }
 
-  bool differenceOfExists(
-      int originalValue, int valueToCompareTo, int difference) {
-    bool plus = originalValue + difference < valueToCompareTo ||
-        valueToCompareTo == 0 ||
-        valueToCompareTo == 100;
+  bool differenceOfExists(int originalValue, int valueToCompareTo, int difference) {
+    bool plus = originalValue + difference < valueToCompareTo || valueToCompareTo == 0 || valueToCompareTo == 100;
     bool minus = originalValue - difference > valueToCompareTo;
     //customDebugPrint("originalValue"+(originalValue).toString());
     //customDebugPrint("valueToCompareTo"+(valueToCompareTo).toString());
@@ -197,25 +182,20 @@ class _ControlsContainerState extends State<ControlsContainer> {
     }
   }
 
-  void _brightnessDragUpdate(
-      Offset localPosition, MeeduPlayerController controller) {
+  void _brightnessDragUpdate(Offset localPosition, MeeduPlayerController controller) {
     double diff = _verticalDragStartOffset.dy - localPosition.dy;
     double brightness = (diff / 500) + _onDragStartBrightness;
     //customDebugPrint("New");
     //customDebugPrint((controller.brightness.value*100).round());
     //customDebugPrint((brightness*100).round());
-    if (brightness >= 0 &&
-        brightness <= 1 &&
-        differenceOfExists((controller.brightness.value * 100).round(),
-            (brightness * 100).round(), 2)) {
+    if (brightness >= 0 && brightness <= 1 && differenceOfExists((controller.brightness.value * 100).round(), (brightness * 100).round(), 2)) {
       controller.customDebugPrint("brightness $brightness");
       //brightness
       controller.setBrightness(brightness);
     }
   }
 
-  void _brightnessDragStart(
-      Offset localPosition, MeeduPlayerController controller) async {
+  void _brightnessDragStart(Offset localPosition, MeeduPlayerController controller) async {
     controller.showBrightnessStatus.value = true;
     controller.showVolumeStatus.value = false;
 
@@ -231,71 +211,140 @@ class _ControlsContainerState extends State<ControlsContainer> {
   }
 
   Widget controlsUI(MeeduPlayerController _, BuildContext context) {
-    return Stack(children: [
-      RxBuilder((__) {
-        if (!_.mobileControls) {
-          return MouseRegion(
-              cursor: _.showControls.value
-                  ? SystemMouseCursors.basic
-                  : SystemMouseCursors.none,
-              onHover: (___) {
-                //customDebugPrint(___.delta);
-                if (_.mouseMoveInitial < const Offset(75, 75).distance) {
-                  _.mouseMoveInitial = _.mouseMoveInitial + ___.delta.distance;
-                } else {
-                  _.controls = true;
-                }
-              },
-              child: videoControls(_, context));
-        } else {
-          return videoControls(_, context);
-        }
-      }),
-      if (_.enabledControls.doubleTapToSeek && (_.mobileControls))
-        RxBuilder(
-          //observables: [_.showControls],
-          (__) => IgnorePointer(
-            ignoring: true,
-            child: VideoCoreForwardAndRewind(
-              responsive: widget.responsive,
-              showRewind: _.rewindIcons.value,
-              showForward: _.forwardIcons.value,
-              rewindSeconds: _defaultSeekAmount * _.doubleTapCount.value,
-              forwardSeconds: _defaultSeekAmount * _.doubleTapCount.value,
+    return Stack(
+      children: [
+        RxBuilder((__) {
+          if (!_.mobileControls) {
+            return MouseRegion(
+                cursor: _.showControls.value ? SystemMouseCursors.basic : SystemMouseCursors.none,
+                onHover: (___) {
+                  //customDebugPrint(___.delta);
+                  if (_.mouseMoveInitial < const Offset(75, 75).distance) {
+                    _.mouseMoveInitial = _.mouseMoveInitial + ___.delta.distance;
+                  } else {
+                    _.controls = true;
+                  }
+                },
+                child: videoControls(_, context));
+          } else {
+            return videoControls(_, context);
+          }
+        }),
+        if (_.enabledControls.doubleTapToSeek && (_.mobileControls))
+          RxBuilder(
+            //observables: [_.showControls],
+            (__) => IgnorePointer(
+              ignoring: true,
+              child: VideoCoreForwardAndRewind(
+                responsive: widget.responsive,
+                showRewind: _.rewindIcons.value,
+                showForward: _.forwardIcons.value,
+                rewindSeconds: _defaultSeekAmount * _.doubleTapCount.value,
+                forwardSeconds: _defaultSeekAmount * _.doubleTapCount.value,
+              ),
             ),
           ),
-        ),
-      if (_.enabledOverlays.volume)
-        RxBuilder(
-          //observables: [_.volume],
-          (__) => AnimatedOpacity(
-            duration: _.durations.volumeOverlayDuration,
-            opacity: _.showVolumeStatus.value ? 1 : 0,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                margin: const EdgeInsets.all(10),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: SizedBox(
-                    height: widget.responsive.height / 2,
-                    width: 35,
-                    child: Stack(
-                      alignment: AlignmentDirectional.bottomCenter,
-                      children: [
-                        Container(color: Colors.black38),
-                        Container(
-                          height: _.volume.value * widget.responsive.height / 2,
-                          color: Colors.blue,
+        if (_.enabledOverlays.volume)
+          RxBuilder(
+            //observables: [_.volume],
+            (__) => AnimatedOpacity(
+              duration: _.durations.volumeOverlayDuration,
+              opacity: _.showVolumeStatus.value ? 1 : 0,
+              child: SafeArea(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.all(10),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: SizedBox(
+                        height: widget.responsive.height / 2,
+                        width: 35,
+                        child: Stack(
+                          alignment: AlignmentDirectional.bottomCenter,
+                          children: [
+                            Container(color: Colors.black38),
+                            Container(
+                              height: _.volume.value * widget.responsive.height / 2,
+                              color: Colors.blue,
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              child: const Icon(
+                                Icons.music_note,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
                         ),
-                        Container(
-                            padding: const EdgeInsets.all(5),
-                            child: const Icon(
-                              Icons.music_note,
-                              color: Colors.white,
-                            )),
-                      ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (_.enabledOverlays.brightness)
+          RxBuilder(
+            //observables: [_.volume],
+            (__) => AnimatedOpacity(
+              duration: _.durations.brightnessOverlayDuration,
+              opacity: _.showBrightnessStatus.value ? 1 : 0,
+              child: SafeArea(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.all(10),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: SizedBox(
+                        height: widget.responsive.height / 2,
+                        width: 35,
+                        child: Stack(
+                          alignment: AlignmentDirectional.bottomCenter,
+                          children: [
+                            Container(color: Colors.black38),
+                            Container(
+                              height: _.brightness.value * widget.responsive.height / 2,
+                              color: Colors.blue,
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              child: const Icon(
+                                Icons.wb_sunny,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        RxBuilder(
+          //observables: [_.showSwipeDuration],
+          //observables: [_.swipeDuration],
+          (__) => Align(
+            alignment: Alignment.center,
+            child: AnimatedOpacity(
+              duration: _.durations.seekDuration,
+              opacity: _.showSwipeDuration.value ? 1 : 0,
+              child: Visibility(
+                visible: _.showSwipeDuration.value,
+                child: Container(
+                  color: Colors.grey[900],
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      _.swipeDuration.value > 0
+                          ? "+ ${printDuration(Duration(seconds: _.swipeDuration.value))}"
+                          : "- ${printDuration(Duration(seconds: _.swipeDuration.value))}",
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),
                 ),
@@ -303,38 +352,23 @@ class _ControlsContainerState extends State<ControlsContainer> {
             ),
           ),
         ),
-      if (_.enabledOverlays.brightness)
         RxBuilder(
-          //observables: [_.volume],
-          (__) => AnimatedOpacity(
-            duration: _.durations.brightnessOverlayDuration,
-            opacity: _.showBrightnessStatus.value ? 1 : 0,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                margin: const EdgeInsets.all(10),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: SizedBox(
-                    height: widget.responsive.height / 2,
-                    width: 35,
-                    child: Stack(
-                      alignment: AlignmentDirectional.bottomCenter,
-                      children: [
-                        Container(color: Colors.black38),
-                        Container(
-                          height:
-                              _.brightness.value * widget.responsive.height / 2,
-                          color: Colors.blue,
-                        ),
-                        Container(
-                            padding: const EdgeInsets.all(5),
-                            child: const Icon(
-                              Icons.wb_sunny,
-                              color: Colors.white,
-                            )),
-                      ],
+          //observables: [_.showSwipeDuration],
+          //observables: [_.swipeDuration],
+          (__) => Align(
+            alignment: Alignment.center,
+            child: AnimatedOpacity(
+              duration: _.durations.videoFitOverlayDuration,
+              opacity: _.videoFitChanged.value ? 1 : 0,
+              child: Visibility(
+                visible: _.videoFitChanged.value,
+                child: Container(
+                  color: Colors.grey[900],
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      _.videoFit.value.name[0].toUpperCase() + _.videoFit.value.name.substring(1),
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),
                 ),
@@ -342,84 +376,31 @@ class _ControlsContainerState extends State<ControlsContainer> {
             ),
           ),
         ),
-      RxBuilder(
-        //observables: [_.showSwipeDuration],
-        //observables: [_.swipeDuration],
-        (__) => Align(
-          alignment: Alignment.center,
-          child: AnimatedOpacity(
-            duration: _.durations.seekDuration,
-            opacity: _.showSwipeDuration.value ? 1 : 0,
-            child: Visibility(
-              visible: _.showSwipeDuration.value,
-              child: Container(
-                color: Colors.grey[900],
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    _.swipeDuration.value > 0
-                        ? "+ ${printDuration(Duration(seconds: _.swipeDuration.value))}"
-                        : "- ${printDuration(Duration(seconds: _.swipeDuration.value))}",
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      RxBuilder(
-        //observables: [_.showSwipeDuration],
-        //observables: [_.swipeDuration],
-        (__) => Align(
-          alignment: Alignment.center,
-          child: AnimatedOpacity(
-            duration: _.durations.videoFitOverlayDuration,
-            opacity: _.videoFitChanged.value ? 1 : 0,
-            child: Visibility(
-              visible: _.videoFitChanged.value,
-              child: Container(
-                color: Colors.grey[900],
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    _.videoFit.value.name[0].toUpperCase() +
-                        _.videoFit.value.name.substring(1),
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      RxBuilder(
-          //observables: [_.showControls],
-          (__) {
-        _.dataStatus.status.value;
-        if (_.dataStatus.error) {
-          return Center(
+        RxBuilder(
+            //observables: [_.showControls],
+            (__) {
+          _.dataStatus.status.value;
+          if (_.dataStatus.error) {
+            return Center(
               child: Text(
-            _.errorText!,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-          ));
-        } else {
-          return Container();
-        }
-      }),
-      RxBuilder(
-          //observables: [_.showControls],
-          (__) {
-        _.dataStatus.status.value;
-        if (_.dataStatus.loading || _.isBuffering.value) {
-          return Center(
-            child: _.loadingWidget,
-          );
-        } else {
-          return Container();
-        }
-      }),
-    ]);
+                _.errorText!,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }),
+        RxBuilder(
+            //observables: [_.showControls],
+            (__) {
+          _.dataStatus.status.value;
+          if (_.dataStatus.loading || _.isBuffering.value) {
+            return Center(child: _.loadingWidget);
+          }
+          return const SizedBox.shrink();
+        }),
+      ],
+    );
   }
 
   //----------------------------//
@@ -456,8 +437,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
     _dragInitialDelta = Offset.zero;
   }
 
-  void onHorizontalDragUpdate(
-      DragUpdateDetails details, MeeduPlayerController _) {
+  void onHorizontalDragUpdate(DragUpdateDetails details, MeeduPlayerController _) {
     if (checkMobileLock(_)) return;
 
     if (_.enabledControls.seekSwipes) {
@@ -470,9 +450,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
       if (_dragInitialDelta == Offset.zero) {
         final Offset delta = details.delta;
         if (details.localPosition.dx > widget.responsive.width * 0.1 &&
-            ((widget.responsive.width - details.localPosition.dx) >
-                    widget.responsive.width * 0.1 &&
-                !gettingNotification)) {
+            ((widget.responsive.width - details.localPosition.dx) > widget.responsive.width * 0.1 && !gettingNotification)) {
           _forwardDragStart(position, _);
           _dragInitialDelta = delta;
         } else {
@@ -499,8 +477,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
     }
   }
 
-  void onVerticalDragUpdate(
-      DragUpdateDetails details, MeeduPlayerController _) {
+  void onVerticalDragUpdate(DragUpdateDetails details, MeeduPlayerController _) {
     if (checkMobileLock(_)) return;
 
     if (_.mobileControls) {
@@ -513,8 +490,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
       if (_dragInitialDelta == Offset.zero) {
         _.customDebugPrint(details.localPosition.dy);
         if (details.localPosition.dy > widget.responsive.height * 0.1 &&
-            ((widget.responsive.height - details.localPosition.dy) >
-                widget.responsive.height * 0.1) &&
+            ((widget.responsive.height - details.localPosition.dy) > widget.responsive.height * 0.1) &&
             !gettingNotification) {
           final Offset delta = details.delta;
           //if(details.localPosition.dy<30){
@@ -572,105 +548,92 @@ class _ControlsContainerState extends State<ControlsContainer> {
 
   Widget videoControls(MeeduPlayerController _, BuildContext context) {
     return GestureDetector(
-        onPanStart: UniversalPlatform.isDesktop ? (__) => windowDrag(_) : null,
-        onTap: () => onTap(_),
-        onLongPressStart:
-            (_.mobileControls && _.enabledControls.onLongPressSpeedUp)
-                ? (details) {
-                    if (_.customCallbacks.onLongPressStartedCallback != null) {
-                      _.customCallbacks.onLongPressStartedCallback!(_);
-                    } else {
-                      _.setPlaybackSpeed(2);
-                    }
-                  }
-                : null,
-        onLongPressEnd:
-            (_.mobileControls && _.enabledControls.onLongPressSpeedUp)
-                ? (details) {
-                    if (_.customCallbacks.onLongPressEndedCallback != null) {
-                      _.customCallbacks.onLongPressEndedCallback!(_);
-                    } else {
-                      _.setPlaybackSpeed(1);
-                    }
-                  }
-                : null,
-        onHorizontalDragUpdate:
-            (_.mobileControls && !widget.preventVerticalDrag)
-                ? (details) => onHorizontalDragUpdate(details, _)
-                : null,
-        onHorizontalDragEnd: (_.mobileControls && !widget.preventVerticalDrag)
-            ? (details) => onHorizontalDragEnd(details, _)
-            : null,
-        onVerticalDragUpdate: (_.mobileControls && !widget.preventVerticalDrag)
-            ? (details) => onVerticalDragUpdate(details, _)
-            : null,
-        onVerticalDragEnd: (_.mobileControls && !widget.preventVerticalDrag)
-            ? (details) => onVerticalDragEnd(details, _)
-            : null,
-        child: AnimatedContainer(
-            duration: _.durations.controlsDuration,
-            color: _.showControls.value ? Colors.black26 : Colors.transparent,
-            child: Stack(
-              children: [
-                if (_.enabledControls.doubleTapToSeek &&
-                    (_.mobileControls) &&
-                    !_.lockedControls.value)
-                  Positioned.fill(
-                    bottom: widget.responsive.height * 0.20,
-                    top: widget.responsive.height * 0.20,
-                    child: VideoCoreForwardAndRewindLayout(
-                      responsive: widget.responsive,
-                      rewind: GestureDetector(
-                        // behavior: HitTestBehavior.translucent,
-                        onTap: () {
-                          if (_.doubleTapCount.value != 0 || tappedTwice) {
-                            _rewind(context, _);
-                            tappedOnce(_, true);
-                          } else {
-                            tappedOnce(_, false);
-                          }
-                        },
-                      ),
-                      forward: GestureDetector(
-                        // behavior: HitTestBehavior.translucent,
-                        onTap: () {
-                          if (_.doubleTapCount.value != 0 || tappedTwice) {
-                            _forward(context, _);
-                            tappedOnce(_, true);
-                          } else {
-                            tappedOnce(_, false);
-                          }
-                        },
-                        //behavior: HitTestBehavior.,
-                      ),
-                    ),
+      onPanStart: UniversalPlatform.isDesktop ? (__) => windowDrag(_) : null,
+      onTap: () => onTap(_),
+      onLongPressStart: (_.mobileControls && _.enabledControls.onLongPressSpeedUp)
+          ? (details) {
+              if (_.customCallbacks.onLongPressStartedCallback != null) {
+                _.customCallbacks.onLongPressStartedCallback!(_);
+              } else {
+                _.setPlaybackSpeed(2);
+              }
+            }
+          : null,
+      onLongPressEnd: (_.mobileControls && _.enabledControls.onLongPressSpeedUp)
+          ? (details) {
+              if (_.customCallbacks.onLongPressEndedCallback != null) {
+                _.customCallbacks.onLongPressEndedCallback!(_);
+              } else {
+                _.setPlaybackSpeed(1);
+              }
+            }
+          : null,
+      onHorizontalDragUpdate: (_.mobileControls && !widget.preventVerticalDrag) ? (details) => onHorizontalDragUpdate(details, _) : null,
+      onHorizontalDragEnd: (_.mobileControls && !widget.preventVerticalDrag) ? (details) => onHorizontalDragEnd(details, _) : null,
+      onVerticalDragUpdate: (_.mobileControls && !widget.preventVerticalDrag) ? (details) => onVerticalDragUpdate(details, _) : null,
+      onVerticalDragEnd: (_.mobileControls && !widget.preventVerticalDrag) ? (details) => onVerticalDragEnd(details, _) : null,
+      child: AnimatedContainer(
+        duration: _.durations.controlsDuration,
+        color: _.showControls.value ? Colors.black26 : Colors.transparent,
+        child: Stack(
+          children: [
+            if (_.enabledControls.doubleTapToSeek && (_.mobileControls) && !_.lockedControls.value)
+              Positioned.fill(
+                bottom: widget.responsive.height * 0.20,
+                top: widget.responsive.height * 0.20,
+                child: VideoCoreForwardAndRewindLayout(
+                  responsive: widget.responsive,
+                  rewind: GestureDetector(
+                    // behavior: HitTestBehavior.translucent,
+                    onTap: () {
+                      if (_.doubleTapCount.value != 0 || tappedTwice) {
+                        _rewind(context, _);
+                        tappedOnce(_, true);
+                      } else {
+                        tappedOnce(_, false);
+                      }
+                    },
                   ),
-                AnimatedOpacity(
-                  opacity:
-                      (!_.showControls.value || _.lockedControls.value) ? 0 : 1,
-                  duration: _.durations.controlsDuration,
+                  forward: GestureDetector(
+                    // behavior: HitTestBehavior.translucent,
+                    onTap: () {
+                      if (_.doubleTapCount.value != 0 || tappedTwice) {
+                        _forward(context, _);
+                        tappedOnce(_, true);
+                      } else {
+                        tappedOnce(_, false);
+                      }
+                    },
+                    //behavior: HitTestBehavior.,
+                  ),
+                ),
+              ),
+            AnimatedOpacity(
+              opacity: (!_.showControls.value || _.lockedControls.value) ? 0 : 1,
+              duration: _.durations.controlsDuration,
+              child: IgnorePointer(
+                ignoring: (!_.showControls.value || _.lockedControls.value),
+                child: SafeArea(child: widget.child),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: AnimatedOpacity(
+                opacity: !(_.showControls.value && _.lockedControls.value) ? 0 : 1,
+                duration: _.durations.controlsDuration,
+                child: Padding(
+                  padding: const EdgeInsets.all(30.0),
                   child: IgnorePointer(
-                      ignoring:
-                          (!_.showControls.value || _.lockedControls.value),
-                      child: widget.child),
-                ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: AnimatedOpacity(
-                    opacity: !(_.showControls.value && _.lockedControls.value)
-                        ? 0
-                        : 1,
-                    duration: _.durations.controlsDuration,
-                    child: IgnorePointer(
-                        ignoring:
-                            !(_.showControls.value && _.lockedControls.value),
-                        child: LockButton(
-                          responsive: _.responsive,
-                        )),
+                    ignoring: !(_.showControls.value && _.lockedControls.value),
+                    child: LockButton(responsive: _.responsive),
                   ),
                 ),
-              ],
-            )));
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
     //_.videoPlayerController!.seekTo(position);
   }
 

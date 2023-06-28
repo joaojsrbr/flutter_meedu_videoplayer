@@ -28,13 +28,9 @@ class PlayerSlider extends StatelessWidget {
           (__) {
             final int value = _.sliderPosition.value.inSeconds;
             final double max = _.duration.value.inSeconds.toDouble();
-            if (value > max || max <= 0) {
-              return Container();
-            }
+            if (value > max || max <= 0) return const SizedBox.shrink();
             return Container(
-              constraints: const BoxConstraints(
-                maxHeight: 30,
-              ),
+              constraints: const BoxConstraints(maxHeight: 30),
               padding: const EdgeInsets.only(bottom: 8),
               alignment: Alignment.center,
               child: SliderTheme(
@@ -43,8 +39,7 @@ class PlayerSlider extends StatelessWidget {
                   thumbColor: _.colorTheme,
                   activeTrackColor: _.colorTheme,
                   trackHeight: 10,
-                  thumbShape:
-                      const RoundSliderThumbShape(enabledThumbRadius: 4.0),
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4.0),
                 ),
                 child: Slider(
                   min: 0,
@@ -83,8 +78,7 @@ class MSliderTrackShape extends RoundedRectSliderTrackShape {
   }) {
     const double trackHeight = 1;
     final double trackLeft = offset.dx;
-    final double trackTop =
-        offset.dy + (parentBox.size.height - trackHeight) / 2 + 4;
+    final double trackTop = offset.dy + (parentBox.size.height - trackHeight) / 2 + 4;
     final double trackWidth = parentBox.size.width;
     return Rect.fromLTWH(trackLeft, trackTop, trackWidth, trackHeight);
   }

@@ -5,28 +5,29 @@ import 'package:flutter_meedu_videoplayer/src/widgets/styles/secondary/secondary
 
 class SecondaryVideoPlayerControls extends StatelessWidget {
   final Responsive responsive;
-  const SecondaryVideoPlayerControls({Key? key, required this.responsive})
-      : super(key: key);
+  const SecondaryVideoPlayerControls({Key? key, required this.responsive}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final _ = MeeduPlayerController.of(context);
     return ControlsContainer(
       responsive: responsive,
-      child: Stack(
-        children: [
-          // RENDER A CUSTOM HEADER
-          if (_.header != null)
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              child: _.header!,
+      child: SafeArea(
+        child: Stack(
+          children: [
+            // RENDER A CUSTOM HEADER
+            if (_.header != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                child: _.header!,
+              ),
+            SecondaryBottomControls(
+              responsive: responsive,
             ),
-          SecondaryBottomControls(
-            responsive: responsive,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

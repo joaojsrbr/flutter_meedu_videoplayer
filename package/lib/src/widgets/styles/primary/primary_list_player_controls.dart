@@ -6,9 +6,7 @@ import 'package:flutter_meedu_videoplayer/src/widgets/styles/primary/bottom_cont
 import 'primary_player_controls.dart';
 
 class PrimaryListVideoPlayerControls extends PrimaryVideoPlayerControls {
-  const PrimaryListVideoPlayerControls(
-      {Key? key, required Responsive responsive})
-      : super(key: key, responsive: responsive);
+  const PrimaryListVideoPlayerControls({Key? key, required Responsive responsive}) : super(key: key, responsive: responsive);
 
   @override
   Widget build(BuildContext context) {
@@ -57,13 +55,8 @@ class PrimaryListVideoPlayerControls extends PrimaryVideoPlayerControls {
                     //observables: [_.swipeDuration],
                     (__) {
                   _.dataStatus.status.value;
-                  if (!_.showSwipeDuration.value &&
-                      !_.dataStatus.error &&
-                      !_.dataStatus.loading &&
-                      !_.isBuffering.value) {
-                    return PlayPauseButton(
-                      size: responsive.iconSize(),
-                    );
+                  if (!_.showSwipeDuration.value && !_.dataStatus.error && !_.dataStatus.loading && !_.isBuffering.value) {
+                    return PlayPauseButton(size: responsive.iconSize());
                   } else {
                     return Padding(
                       padding: EdgeInsets.all(responsive.iconSize() * 0.25),

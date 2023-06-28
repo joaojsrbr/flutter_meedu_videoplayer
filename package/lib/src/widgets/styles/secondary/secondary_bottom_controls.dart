@@ -5,16 +5,18 @@ import 'package:universal_platform/universal_platform.dart';
 
 class SecondaryBottomControls extends StatelessWidget {
   final Responsive responsive;
-  const SecondaryBottomControls({Key? key, required this.responsive})
-      : super(key: key);
+  const SecondaryBottomControls({Key? key, required this.responsive}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final _ = MeeduPlayerController.of(context);
-    final textStyle = TextStyle(
-      color: Colors.white,
-      fontSize: responsive.fontSize(),
-    );
+    final textStyle = _.defaultTextStyle?.copyWith(
+          fontSize: responsive.fontSize(),
+        ) ??
+        TextStyle(
+          color: Colors.white,
+          fontSize: responsive.fontSize(),
+        );
 
     return Positioned(
       left: 0,
@@ -44,11 +46,9 @@ class SecondaryBottomControls extends StatelessWidget {
                       String text = "";
                       if (_.duration.value.inMinutes >= 60) {
                         // if the duration is >= 1 hour
-                        text =
-                            "${printDurationWithHours(_.position.value)} / ${printDurationWithHours(_.duration.value)}";
+                        text = "${printDurationWithHours(_.position.value)} / ${printDurationWithHours(_.duration.value)}";
                       } else {
-                        text =
-                            "${printDuration(_.position.value)} / ${printDuration(_.duration.value)}";
+                        text = "${printDuration(_.position.value)} / ${printDuration(_.duration.value)}";
                       }
                       return Padding(
                         padding: const EdgeInsets.only(right: 5),
@@ -78,18 +78,11 @@ class SecondaryBottomControls extends StatelessWidget {
               ),
               Row(
                 children: [
-                  if (_.bottomRight != null) ...[
-                    _.bottomRight!,
-                    const SizedBox(width: 10)
-                  ],
+                  if (_.bottomRight != null) ...[_.bottomRight!, const SizedBox(width: 10)],
                   if (_.enabledButtons.pip) PipButton(responsive: responsive),
-                  if (!UniversalPlatform.isDesktopOrWeb &&
-                      _.enabledButtons.lockControls)
-                    LockButton(responsive: responsive),
-                  if (_.enabledButtons.videoFit)
-                    VideoFitButton(responsive: responsive),
-                  if (_.enabledButtons.muteAndSound)
-                    MuteSoundButton(responsive: responsive),
+                  if (!UniversalPlatform.isDesktopOrWeb && _.enabledButtons.lockControls) LockButton(responsive: responsive),
+                  if (_.enabledButtons.videoFit) VideoFitButton(responsive: responsive),
+                  if (_.enabledButtons.muteAndSound) MuteSoundButton(responsive: responsive),
                   if (_.enabledButtons.fullscreen) ...[
                     FullscreenButton(
                       size: responsive.buttonSize(),

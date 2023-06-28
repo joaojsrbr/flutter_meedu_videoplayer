@@ -6,14 +6,8 @@ class ClosedCaptionView extends StatelessWidget {
   final double distanceFromBottom;
 
   ///[customCaptionView] when a custom view for the captions is needed
-  final Widget Function(BuildContext context, MeeduPlayerController controller,
-      Responsive responsive, String text)? customCaptionView;
-  const ClosedCaptionView(
-      {Key? key,
-      required this.responsive,
-      this.distanceFromBottom = 30,
-      this.customCaptionView})
-      : super(key: key);
+  final Widget Function(BuildContext context, MeeduPlayerController controller, Responsive responsive, String text)? customCaptionView;
+  const ClosedCaptionView({Key? key, required this.responsive, this.distanceFromBottom = 30, this.customCaptionView}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -27,9 +21,7 @@ class ClosedCaptionView extends StatelessWidget {
         initialData: Duration.zero,
         stream: _.onPositionChanged,
         builder: (__, snapshot) {
-          if (snapshot.hasError) {
-            return Container();
-          }
+          if (snapshot.hasError) return const SizedBox.shrink();
 
           final strSubtitle = _.videoPlayerController!.value.caption.text;
 

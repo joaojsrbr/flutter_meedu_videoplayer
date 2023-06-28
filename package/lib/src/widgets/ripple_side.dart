@@ -16,31 +16,54 @@ class ForwardAndRewindRippleSide extends StatelessWidget {
   Widget build(BuildContext context) {
     //final style = VideoViewerStyle();
     //final ripple = style.forwardAndRewindStyle.ripple;
-    final ripple = Colors.grey[900]?.withOpacity(0.35);
-    return CustomPaint(
-      size: Size.infinite,
-      painter: side == RippleSide.left
-          ? _RippleLeftPainter(ripple!)
-          : _RippleRightPainter(ripple!),
-      child: Padding(
-        padding: side == RippleSide.left
-            ? const EdgeInsets.only(right: 10)
-            : const EdgeInsets.only(left: 10),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            side == RippleSide.left
-                ? const Icon(Icons.fast_rewind, color: Colors.white)
-                : const Icon(Icons.fast_forward, color: Colors.white),
-            Text(text,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold)),
-          ],
-        ),
+    return Padding(
+      padding: side == RippleSide.left ? const EdgeInsets.only(right: 10) : const EdgeInsets.only(left: 10),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          side == RippleSide.left ? const Icon(Icons.fast_rewind, color: Colors.white) : const Icon(Icons.fast_forward, color: Colors.white),
+          Text(text, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+        ],
       ),
     );
+    // final ripple = Colors.grey[900]?.withOpacity(0.35);
+    // return CustomPaint(
+    //   size: Size.infinite,
+    //   painter: side == RippleSide.left ? _RippleLeftPainter(ripple!) : _RippleRightPainter(ripple!),
+    //   child: Padding(
+    //     padding: side == RippleSide.left ? const EdgeInsets.only(right: 10) : const EdgeInsets.only(left: 10),
+    //     child: Column(
+    //       mainAxisAlignment: MainAxisAlignment.center,
+    //       children: [
+    //         side == RippleSide.left ? const Icon(Icons.fast_rewind, color: Colors.white) : const Icon(Icons.fast_forward, color: Colors.white),
+    //         Text(
+    //           text,
+    //           style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+    //         ),
+    //       ],
+    //     ),
+    //   ),
+    // );
+    // return AnimatedContainer(
+    //   color: side == RippleSide.left || side == RippleSide.right ? ripple : null,
+    //   duration: const Duration(milliseconds: 200),
+    //   width: side == RippleSide.left ? MediaQuery.sizeOf(context).width / 2 : null,
+    //   // size: Size.infinite,
+    //   // painter: side == RippleSide.left ? _RippleLeftPainter(ripple!) : _RippleRightPainter(ripple!),
+    //   child: Padding(
+    //     padding: side == RippleSide.left ? const EdgeInsets.only(right: 10) : const EdgeInsets.only(left: 10),
+    //     child: Column(
+    //       mainAxisAlignment: MainAxisAlignment.center,
+    //       children: [
+    //         side == RippleSide.left ? const Icon(Icons.fast_rewind, color: Colors.white) : const Icon(Icons.fast_forward, color: Colors.white),
+    //         Text(
+    //           text,
+    //           style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+    //         ),
+    //       ],
+    //     ),
+    //   ),
+    // );
   }
 }
 
