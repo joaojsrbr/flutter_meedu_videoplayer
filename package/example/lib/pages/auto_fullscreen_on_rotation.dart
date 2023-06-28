@@ -1,11 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_meedu_videoplayer/meedu_player.dart';
-
-import 'package:native_device_orientation/native_device_orientation.dart';
 
 class Quality {
   final String url, label;
@@ -19,8 +16,7 @@ class AutoFullScreenExamplePage extends StatefulWidget {
   const AutoFullScreenExamplePage({Key? key}) : super(key: key);
 
   @override
-  State<AutoFullScreenExamplePage> createState() =>
-      _AutoFullScreenExamplePageState();
+  State<AutoFullScreenExamplePage> createState() => _AutoFullScreenExamplePageState();
 }
 
 class _AutoFullScreenExamplePageState extends State<AutoFullScreenExamplePage> {
@@ -83,9 +79,7 @@ class _AutoFullScreenExamplePageState extends State<AutoFullScreenExamplePage> {
     });
 
     // Listen for device orientation changes.
-    _orientation = NativeDeviceOrientationCommunicator()
-        .onOrientationChanged(useSensor: true)
-        .listen((event) {
+    _orientation = NativeDeviceOrientationCommunicator().onOrientationChanged(useSensor: true).listen((event) {
       // Cancel any active debounce timers.
       if (_debounceTimer?.isActive ?? false) {
         _debounceTimer?.cancel();
@@ -96,8 +90,7 @@ class _AutoFullScreenExamplePageState extends State<AutoFullScreenExamplePage> {
         print("onOrientationChanged $event");
 
         // Check the device orientation to identify the current mode.
-        if (event == NativeDeviceOrientation.portraitUp ||
-            event == NativeDeviceOrientation.portraitDown) {
+        if (event == NativeDeviceOrientation.portraitUp || event == NativeDeviceOrientation.portraitDown) {
           // Exit fullscreen mode if the device was put in fullscreen mode from an orientation change.
           if (_controller.fullscreen.value && fullScreenFromOrientation) {
             _controller.setFullScreen(false, context);
@@ -105,8 +98,7 @@ class _AutoFullScreenExamplePageState extends State<AutoFullScreenExamplePage> {
           }
         }
 
-        if (event == NativeDeviceOrientation.landscapeLeft ||
-            event == NativeDeviceOrientation.landscapeRight) {
+        if (event == NativeDeviceOrientation.landscapeLeft || event == NativeDeviceOrientation.landscapeRight) {
           // Enter fullscreen mode if the device is in landscape mode and not in fullscreen mode.
           if (!_controller.fullscreen.value) {
             _controller.setFullScreen(true, context);

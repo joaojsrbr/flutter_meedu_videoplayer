@@ -3,7 +3,7 @@ description: Demonstrates how to use the flutter_meedu_videoplayer plugin.
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 environment:
   sdk: ">=2.17.0 <3.0.0"
@@ -26,14 +26,14 @@ dependencies:
     # the parent directory to use the current plugin's version.
     path: ../
   file_picker: ^5.2.4
-  visibility_detector: ^0.3.3
-  dio: ^5.1.1
+  visibility_detector: ^0.4.0+2
+  dio: ^5.2.1+1
   path: ^1.8.0
   path_provider: ^2.0.6
   native_device_orientation: ^1.1.4
   http: ^0.13.5
   media_kit_libs_android_video: ^1.0.6
-  media_kit_libs_ios_video: ^1.0.4              # iOS package for video (& audio) native libraries.
+  media_kit_libs_ios_video: ^1.0.4 # iOS package for video (& audio) native libraries.
   youtube_explode_dart: ^1.12.4
   video_player_web_hls: ^1.0.0+3
   desktop_drop: ^0.4.1
@@ -42,8 +42,8 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
 
-# dependency_overrides: 
-#   media_kit: 
+# dependency_overrides:
+#   media_kit:
 #     path: ../../../media_kit/media_kit
 dev_dependencies:
   flutter_test:
@@ -61,7 +61,6 @@ dev_dependencies:
 
 # The following section is specific to Flutter.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
