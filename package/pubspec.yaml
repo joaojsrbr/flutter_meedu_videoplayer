@@ -27,23 +27,17 @@ dependencies:
   # video_player_media_kit:
   #   path: ../../video_player_media_kit
 
-
   window_manager: ^0.3.5
-  # window_manager: 
+  # window_manager:
   #   path: ../../window_manager
   # wakelock: ^0.6.1+2
   wakelock_plus: ^1.1.1
   shared_preferences: ^2.0.13
   path_provider: ^2.0.6
- 
-
-
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-
 
   flutter_lints: ^2.0.1
 
