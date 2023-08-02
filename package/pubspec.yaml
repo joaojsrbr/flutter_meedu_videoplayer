@@ -24,9 +24,22 @@ dependencies:
   meta: ^1.9.1
   universal_platform: ^1.0.0+1
   fullscreen_window: ^1.0.4
+
   # video_player_media_kit: ^0.0.21
-  video_player_media_kit:
-    path: ../video_player_media_kit-master
+  # video_player_media_kit:
+  #   path: ../video_player_media_kit-master
+
+  # # Enables support for higher number of concurrent instances. Optional.
+  media_kit_native_event_loop: ^1.0.6 # Support for higher number of concurrent instances & better performance.
+  media_kit_libs_macos_video: ^1.0.6 # macOS package for video native libraries.
+  media_kit_libs_windows_video: ^1.0.5 # Windows package for video native libraries.
+  media_kit_libs_linux: ^1.0.2 # GNU/Linux dependency package.
+  video_player_platform_interface: ^6.2.0
+  stream_transform: ^2.1.0
+  universal_platform: ^1.0.0+1
+  media_kit: ^1.1.0
+  # For video rendering.
+  media_kit_video: ^1.1.0
 
   window_manager: ^0.3.5
   # window_manager:
