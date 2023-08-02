@@ -36,7 +36,6 @@ dependencies:
   media_kit_libs_linux: ^1.0.2 # GNU/Linux dependency package.
   video_player_platform_interface: ^6.2.0
   stream_transform: ^2.1.0
-  universal_platform: ^1.0.0+1
   media_kit: ^1.1.0
   # For video rendering.
   media_kit_video: ^1.1.0
