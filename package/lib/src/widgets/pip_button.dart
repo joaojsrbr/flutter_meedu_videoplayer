@@ -14,7 +14,7 @@ class PipButton extends StatelessWidget {
         //   _.fullscreen,
         // ],
         (__) {
-      if (!_.pipAvailable.value) return Container();
+      if (!_.pipAvailable.value) return const SizedBox.shrink();
       String iconPath = 'assets/icons/picture-in-picture.png';
       Widget? customIcon = _.customIcons.pip;
       if (_.isInPipMode.value) {
@@ -28,8 +28,7 @@ class PipButton extends StatelessWidget {
         iconColor: Colors.white,
         iconPath: iconPath,
         customIcon: customIcon,
-        onPressed: () =>
-            _.isInPipMode.value ? _.closePip(context) : _.enterPip(context),
+        onPressed: () => _.isInPipMode.value ? _.closePip(context) : _.enterPip(context),
       );
     });
   }

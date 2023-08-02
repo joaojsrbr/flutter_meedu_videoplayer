@@ -211,6 +211,9 @@ class _ControlsContainerState extends State<ControlsContainer> {
   }
 
   Widget controlsUI(MeeduPlayerController _, BuildContext context) {
+    final orientation = MediaQuery.orientationOf(context);
+
+    final portrait = orientation == Orientation.portrait;
     return Stack(
       children: [
         RxBuilder((__) {
@@ -247,84 +250,97 @@ class _ControlsContainerState extends State<ControlsContainer> {
         if (_.enabledOverlays.volume)
           RxBuilder(
             //observables: [_.volume],
-            (__) => AnimatedOpacity(
-              duration: _.durations.volumeOverlayDuration,
-              opacity: _.showVolumeStatus.value ? 1 : 0,
-              child: SafeArea(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    margin: const EdgeInsets.all(10),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: SizedBox(
-                        height: widget.responsive.height / 2,
-                        width: 35,
-                        child: Stack(
-                          alignment: AlignmentDirectional.bottomCenter,
-                          children: [
-                            Container(color: Colors.black38),
-                            Container(
-                              height: _.volume.value * widget.responsive.height / 2,
-                              color: Colors.blue,
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(5),
-                              child: const Icon(
-                                Icons.music_note,
-                                color: Colors.white,
+            (__) {
+              final height = portrait ? widget.responsive.height / 2.4 : widget.responsive.height / 2;
+              return AnimatedOpacity(
+                duration: _.durations.volumeOverlayDuration,
+                opacity: _.showVolumeStatus.value ? 1 : 0,
+                child: SafeArea(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.all(10),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: SizedBox(
+                          height: height,
+                          width: 35,
+                          child: Stack(
+                            alignment: AlignmentDirectional.bottomCenter,
+                            children: [
+                              Positioned.fill(
+                                child: ColoredBox(color: Theme.of(context).colorScheme.surface),
                               ),
-                            ),
-                          ],
+                              Container(
+                                height: _.volume.value * height,
+                                color: Colors.blue,
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(5),
+                                child: _.customIcons.volume ??
+                                    const Icon(
+                                      Icons.music_note,
+                                      color: Colors.white,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         if (_.enabledOverlays.brightness)
           RxBuilder(
             //observables: [_.volume],
-            (__) => AnimatedOpacity(
-              duration: _.durations.brightnessOverlayDuration,
-              opacity: _.showBrightnessStatus.value ? 1 : 0,
-              child: SafeArea(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    margin: const EdgeInsets.all(10),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: SizedBox(
-                        height: widget.responsive.height / 2,
-                        width: 35,
-                        child: Stack(
-                          alignment: AlignmentDirectional.bottomCenter,
-                          children: [
-                            Container(color: Colors.black38),
-                            Container(
-                              height: _.brightness.value * widget.responsive.height / 2,
-                              color: Colors.blue,
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(5),
-                              child: const Icon(
-                                Icons.wb_sunny,
-                                color: Colors.white,
+            (__) {
+              final height = portrait ? widget.responsive.height / 2.4 : widget.responsive.height / 2;
+
+              return AnimatedOpacity(
+                duration: _.durations.brightnessOverlayDuration,
+                opacity: _.showBrightnessStatus.value ? 1 : 0,
+                child: SafeArea(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.all(10),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: SizedBox(
+                          height: height,
+                          width: 35,
+                          child: Stack(
+                            alignment: AlignmentDirectional.bottomCenter,
+                            children: [
+                              Positioned.fill(
+                                child: ColoredBox(color: Theme.of(context).colorScheme.surface),
                               ),
-                            ),
-                          ],
+                              Container(
+                                height: _.brightness.value * height,
+                                color: Colors.blue,
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(5),
+                                child: _.customIcons.brightness ??
+                                    const Icon(
+                                      Icons.wb_sunny,
+                                      color: Colors.white,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         RxBuilder(
           //observables: [_.showSwipeDuration],
@@ -336,8 +352,8 @@ class _ControlsContainerState extends State<ControlsContainer> {
               opacity: _.showSwipeDuration.value ? 1 : 0,
               child: Visibility(
                 visible: _.showSwipeDuration.value,
-                child: Container(
-                  color: Colors.grey[900],
+                child: ColoredBox(
+                  color: Colors.grey.shade900,
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
@@ -362,8 +378,8 @@ class _ControlsContainerState extends State<ControlsContainer> {
               opacity: _.videoFitChanged.value ? 1 : 0,
               child: Visibility(
                 visible: _.videoFitChanged.value,
-                child: Container(
-                  color: Colors.grey[900],
+                child: ColoredBox(
+                  color: Colors.grey.shade900,
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
@@ -380,7 +396,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
             //observables: [_.showControls],
             (__) {
           _.dataStatus.status.value;
-          if (_.dataStatus.error) {
+          if (_.dataStatus.error && _.errorText != null) {
             return Center(
               child: Text(
                 _.errorText!,

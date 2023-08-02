@@ -14,9 +14,8 @@ class LockButton extends StatelessWidget {
         //   _.lockAvailable,
         // ],
         (__) {
-      _.lockedControls
-          .value; // this is the value that the rxbuilder will listen to (for updates)
-      if (UniversalPlatform.isDesktopOrWeb) return Container();
+      _.lockedControls.value; // this is the value that the rxbuilder will listen to (for updates)
+      if (UniversalPlatform.isDesktopOrWeb) return const SizedBox.shrink();
       String iconPath = 'assets/icons/lock-screen.png';
       Widget? customIcon = _.customIcons.lock;
       if (!_.lockedControls.value) {
@@ -30,9 +29,7 @@ class LockButton extends StatelessWidget {
         iconColor: Colors.white,
         iconPath: iconPath,
         customIcon: customIcon,
-        onPressed: () => _.lockedControls.value
-            ? _.toggleLockScreenMobile()
-            : _.toggleLockScreenMobile(),
+        onPressed: () => _.lockedControls.value ? _.toggleLockScreenMobile() : _.toggleLockScreenMobile(),
       );
     });
   }

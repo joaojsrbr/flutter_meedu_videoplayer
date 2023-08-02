@@ -50,9 +50,7 @@ class PlayerSlider extends StatelessWidget {
                   },
                   onChangeEnd: (v) {
                     _.onChangedSliderEnd();
-                    _.seekTo(
-                      Duration(seconds: v.floor()),
-                    );
+                    _.seekTo(Duration(seconds: v.floor()));
                   },
                   label: printDuration(_.sliderPosition.value),
                   max: max,

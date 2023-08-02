@@ -84,9 +84,7 @@ class SecondaryBottomControls extends StatelessWidget {
                   if (_.enabledButtons.videoFit) VideoFitButton(responsive: responsive),
                   if (_.enabledButtons.muteAndSound) MuteSoundButton(responsive: responsive),
                   if (_.enabledButtons.fullscreen) ...[
-                    FullscreenButton(
-                      size: responsive.buttonSize(),
-                    ),
+                    FullscreenButton(size: responsive.buttonSize()),
                     const SizedBox(width: 5),
                   ],
                 ],

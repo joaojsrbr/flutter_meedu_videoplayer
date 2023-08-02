@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:async';
 import 'dart:developer' as dev;
 import 'dart:math';
@@ -8,13 +9,13 @@ import 'package:flutter_meedu/meedu.dart';
 import 'package:flutter_meedu_videoplayer/meedu_player.dart';
 import 'package:flutter_meedu_videoplayer/src/helpers/desktop_pip_bk.dart';
 import 'package:flutter_meedu_videoplayer/src/native/pip_manager.dart';
-import 'package:flutter_meedu_videoplayer/src/video_player_used.dart';
+import 'package:flutter_meedu_videoplayer/src/widgets/popup_route.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:volume_controller/volume_controller.dart';
-import 'package:wakelock/wakelock.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// An enumeration of the different styles that can be applied to controls, such
@@ -34,12 +35,14 @@ enum ControlsStyle {
 }
 
 class MeeduPlayerController {
-  /// the video_player controller
-  VideoPlayerController? _videoPlayerController;
+  Player? _player;
+  VideoController? _videoPlayerController;
   final _pipManager = PipManager();
+
   final TextStyle? defaultTextStyle;
   StreamSubscription? _playerEventSubs;
   StreamSubscription<double>? _volumeEventSubs;
+  StreamSubscription<Duration>? _streamSubscriptionPlayerPosition;
 
   /// Screen Manager to define the overlays and device orientation when the player enters in fullscreen mode
   final ScreenManager screenManager;
@@ -126,6 +129,8 @@ class MeeduPlayerController {
     BoxFit.scaleDown,
   ];
 
+  Player? get player => _player;
+
   /// use this stream to listen the player data events like none, loading, loaded, error
   Stream<DataStatus> get onDataStatusChanged => dataStatus.status.stream;
 
@@ -189,7 +194,7 @@ class MeeduPlayerController {
   Stream<List<DurationRange>> get onBufferedChanged => _buffered.stream;
 
   /// [videoPlayerController] instace of VideoPlayerController
-  VideoPlayerController? get videoPlayerController => _videoPlayerController;
+  VideoController? get videoPlayerController => _videoPlayerController;
 
   /// the playback speed default value is 1.0
   double get playbackSpeed => _playbackSpeed.value;
@@ -359,11 +364,11 @@ class MeeduPlayerController {
       (PlayerStatus status) {
         if (status == PlayerStatus.playing) {
           if (manageWakeLock && !UniversalPlatform.isLinux) {
-            Wakelock.enable();
+            WakelockPlus.enable();
           }
         } else {
           if (manageWakeLock && !UniversalPlatform.isLinux) {
-            Wakelock.disable();
+            WakelockPlus.disable();
           }
         }
       },
@@ -384,39 +389,21 @@ class MeeduPlayerController {
     }
   }
 
+  static const _defaultPlayerConfiguration = PlayerConfiguration();
+  static const _defaultVideoControllerConfiguration = VideoControllerConfiguration();
+
   /// create a new video_player controller
-  VideoPlayerController _createVideoController(DataSource dataSource, VideoPlayerOptions? videoPlayerOptions) {
-    VideoPlayerController tmp; // create a new video controller
+  void _createVideoController(PlayerConfiguration? configuration, VideoControllerConfiguration? videoControllerConfiguration) {
     //dataSource = await checkIfm3u8AndNoLinks(dataSource);
-    if (dataSource.type == DataSourceType.asset) {
-      tmp = VideoPlayerController.asset(
-        dataSource.source!,
-        closedCaptionFile: dataSource.closedCaptionFile,
-        package: dataSource.package,
-        videoPlayerOptions: videoPlayerOptions,
-      );
-    } else if (dataSource.type == DataSourceType.network) {
-      tmp = VideoPlayerController.network(
-        dataSource.source!,
-        formatHint: dataSource.formatHint,
-        closedCaptionFile: dataSource.closedCaptionFile,
-        httpHeaders: dataSource.httpHeaders ?? {},
-        videoPlayerOptions: videoPlayerOptions,
-      );
-    } else {
-      tmp = VideoPlayerController.file(
-        dataSource.file!,
-        closedCaptionFile: dataSource.closedCaptionFile,
-        httpHeaders: dataSource.httpHeaders ?? {},
-        videoPlayerOptions: videoPlayerOptions,
-      );
-    }
-    return tmp;
+
+    _player = Player(configuration: configuration ?? _defaultPlayerConfiguration);
+
+    _videoPlayerController = VideoController(_player!, configuration: videoControllerConfiguration ?? _defaultVideoControllerConfiguration);
   }
 
-  void customDebugPrint(Object? object) {
+  void customDebugPrint(Object? object, {Object? error, StackTrace? stackTracer}) {
     if (showLogs) {
-      dev.log(object.toString(), name: "flutter_meedu_videoplayer");
+      dev.log(object.toString(), name: "flutter_meedu_videoplayer", stackTrace: stackTracer, error: error);
     }
   }
 
@@ -444,48 +431,38 @@ class MeeduPlayerController {
     }
   }
 
-  void _listener() {
-    final value = _videoPlayerController!.value;
+  void _listener(Duration position) async {
+    final state = _player?.state;
+    if (state == null) return;
     //update duration
-    duration.value = value.duration;
+    duration.value = state.duration;
     // set the current video position
-    final position = value.position;
+
     _position.value = position;
     if (!_isSliderMoving) {
       _sliderPosition.value = position;
     }
 
     // set the video buffered loaded
-    final buffered = value.buffered;
+    final buffered = state.buffer;
+    final lastBufferedEnd = buffered.inSeconds;
+    isBuffering.value = state.playing && position.inSeconds > (lastBufferedEnd);
 
-    if (buffered.isNotEmpty) {
-      _buffered.value = buffered;
+    //respect the native is buffering flag
+    isBuffering.value = isBuffering.value || state.buffering;
 
-      // Calculate the end time of the last buffered segment
-      final lastBufferedEnd = buffered.last.end.inSeconds;
-
-      // Check if the video is playing and the position is near the end of the buffer
-      if (VideoPlayerUsed.mediaKit) {
-        isBuffering.value = value.isPlaying && position.inSeconds > (lastBufferedEnd);
-      } else {
-        isBuffering.value = value.isPlaying && position.inSeconds >= (lastBufferedEnd);
-      }
-      //respect the native is buffering flag
-      isBuffering.value = isBuffering.value || value.isBuffering;
-
-      // Calculate the buffered percentage relative to the total video duration
-      // Update the buffered percentage value
-      bufferedPercent.value = lastBufferedEnd / duration.value.inSeconds;
-    }
+    // Calculate the buffered percentage relative to the total video duration
+    // Update the buffered percentage value
+    bufferedPercent.value = lastBufferedEnd / duration.value.inSeconds;
 
     // save the volume value
-    final volume = value.volume;
+    final volume = state.volume;
     if (!mute.value && _volumeBeforeMute != volume) {
       _volumeBeforeMute = volume;
     }
 
     // check if the player has been finished
-    if ((_position.value.inSeconds >= duration.value.inSeconds) && !playerStatus.completed) {
+    if ((_position.value.inSeconds >= duration.value.inSeconds) && duration.value.inSeconds != 0 && !playerStatus.completed) {
       playerStatus.status.value = PlayerStatus.completed;
     }
   }
@@ -494,50 +471,61 @@ class MeeduPlayerController {
   ///
   /// [autoPlay] if this is true the video automatically start
   Future<void> setDataSource(
-    DataSource dataSource, {
+    Media media, {
     bool autoplay = true,
     bool looping = false,
     Duration seekTo = Duration.zero,
-    VideoPlayerOptions? videoPlayerOptions,
+    PlayerConfiguration? configuration,
+    VideoControllerConfiguration? videoControllerConfiguration,
   }) async {
     try {
       _autoPlay = autoplay;
       _looping = looping;
       dataStatus.status.value = DataStatus.loading;
 
+      var playerState = _player?.state;
+
       // if we are playing a video
-      if (_videoPlayerController != null && _videoPlayerController!.value.isPlaying) {
+      if (playerState != null && playerState.playing) {
         await pause(notify: false);
       }
 
       // save the current video controller to be disposed in the next frame
-      VideoPlayerController? oldController = _videoPlayerController;
+      // VideoController? oldController = _videoPlayerController;
+      Player? oldPlayer = _player;
 
-      _videoPlayerController = _createVideoController(dataSource, videoPlayerOptions);
-      await _videoPlayerController!.initialize();
+      _createVideoController(configuration, videoControllerConfiguration);
 
-      if (oldController != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) async {
-          oldController.removeListener(_listener);
-          await oldController.dispose(); // dispose the previous video controller
-        });
-      }
+      // await _videoPlayerController!.initialize();
+      await _player!.open(media, play: autoplay);
+
+      await Future.wait([_videoPlayerController!.waitUntilFirstFrameRendered]);
+
+      _streamSubscriptionPlayerPosition?.cancel();
+      _streamSubscriptionPlayerPosition = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await oldPlayer?.dispose();
+      });
+
+      playerState = _player!.state;
+
+      _duration.value = playerState.duration;
 
       // set the video duration
-      customDebugPrint("Duration is ${_videoPlayerController!.value.duration}");
-
-      _duration.value = _videoPlayerController!.value.duration;
+      customDebugPrint("Duration is ${playerState.duration}");
 
       /// notify that video was loaded
       dataStatus.status.value = DataStatus.loaded;
 
       await _initializePlayer(seekTo: seekTo);
-      // listen the video player events
-      _videoPlayerController!.addListener(_listener);
+
+      _streamSubscriptionPlayerPosition = _player!.stream.position.listen(_listener);
     } catch (e, s) {
-      customDebugPrint(e);
-      customDebugPrint(s);
-      _errorText ??= _videoPlayerController!.value.errorDescription ?? "$e";
+      customDebugPrint(e, error: e, stackTracer: s);
+
+      _errorText ??= e.toString();
+      // _errorText ??= _videoPlayerController.notifier.value.configuration;
+      // _errorText ??= _videoPlayerController!.value.errorDescription ?? "$e";
       dataStatus.status.value = DataStatus.error;
     }
   }
@@ -550,7 +538,7 @@ class MeeduPlayerController {
       await seekTo(Duration.zero);
     }
 
-    await _videoPlayerController?.play();
+    await _player?.play();
     await getCurrentVolume();
     await getCurrentBrightness();
 
@@ -566,7 +554,7 @@ class MeeduPlayerController {
   ///
   /// [notify] if is true and the events is not null we notifiy the event
   Future<void> pause({bool notify = true}) async {
-    await _videoPlayerController?.pause();
+    await _player?.pause();
     playerStatus.status.value = PlayerStatus.paused;
   }
 
@@ -592,9 +580,11 @@ class MeeduPlayerController {
     customDebugPrint("duration in seek function is ${duration.value.toString()}");
 
     if (duration.value.inSeconds != 0) {
-      customDebugPrint("video controller duration ${_videoPlayerController!.value.duration.toString()}");
+      final state = _player!.state;
 
-      await _videoPlayerController?.seekTo(position);
+      customDebugPrint("video controller duration ${state.duration.toString()}");
+
+      await _player?.seek(position);
       customDebugPrint("position after seek is ${_position.value.toString()}");
 
       _checkIfSeekIsSuccess(position);
@@ -629,7 +619,7 @@ class MeeduPlayerController {
       //_timerForSeek = null;
       customDebugPrint("Re SEEK CALLED");
       if (duration.value.inSeconds != 0) {
-        await _videoPlayerController?.seekTo(position);
+        await _player?.seek(position);
 
         // if (playerStatus.stopped) {
         //   play();
@@ -658,7 +648,7 @@ class MeeduPlayerController {
   ///   possible that your specific video cannot be slowed down, in which case
   ///   the plugin also reports errors.
   Future<void> setPlaybackSpeed(double speed) async {
-    await _videoPlayerController?.setPlaybackSpeed(speed);
+    await _player?.setRate(speed);
     _playbackSpeed.value = speed;
   }
 
@@ -673,7 +663,9 @@ class MeeduPlayerController {
 
   /// Sets whether or not the video should loop after playing once
   Future<void> setLooping(bool looping) async {
-    await _videoPlayerController?.setLooping(looping);
+    // _player?.setAudioDevice(AudioDevice(name, description));
+    _player?.setPlaylistMode(PlaylistMode.loop);
+    // await _videoPlayerController?.setLooping(looping);
     _looping = looping;
   }
 
@@ -696,7 +688,7 @@ class MeeduPlayerController {
   /// [enabled] if is true the video player is muted
   Future<void> setMute(bool enabled) async {
     if (enabled) {
-      _volumeBeforeMute = _videoPlayerController!.value.volume;
+      _volumeBeforeMute = _player!.state.volume;
     }
     _mute.value = enabled;
     await setVolume(enabled ? 0 : _volumeBeforeMute, videoPlayerVolume: true);
@@ -727,7 +719,7 @@ class MeeduPlayerController {
 
   Future<void> getCurrentVolume() async {
     if (desktopOrWeb) {
-      _currentVolume.value = _videoPlayerController?.value.volume ?? 0;
+      _currentVolume.value = _player?.state.volume ?? 0;
     } else {
       try {
         _currentVolume.value = await VolumeController().getVolume();
@@ -764,7 +756,8 @@ class MeeduPlayerController {
       volume.value = volumeNew;
       if (desktopOrWeb || videoPlayerVolume) {
         customDebugPrint("volume is $volumeNew");
-        await _videoPlayerController?.setVolume(volumeNew);
+        _player?.setVolume(volumeNew);
+        // await _videoPlayerController?.setVolume(volumeNew);
         volumeUpdated();
       } else {
         try {
@@ -840,7 +833,11 @@ class MeeduPlayerController {
   }
 
   /// show the player in fullscreen mode
-  Future<void> goToFullscreen(BuildContext context, {bool applyOverlaysAndOrientations = true, bool disposePlayer = false}) async {
+  Future<void> goToFullscreen(
+    BuildContext context, {
+    bool applyOverlaysAndOrientations = true,
+    bool disposePlayer = false,
+  }) async {
     if (applyOverlaysAndOrientations) {
       if (UniversalPlatform.isWeb) {
         screenManager.setWebFullScreen(true, this);
@@ -858,24 +855,44 @@ class MeeduPlayerController {
     if (context.mounted) setVideoAsAppFullScreen(context, applyOverlaysAndOrientations: applyOverlaysAndOrientations, disposePlayer: disposePlayer);
   }
 
-  Future<void> setVideoAsAppFullScreen(BuildContext context, {bool applyOverlaysAndOrientations = true, bool disposePlayer = false}) async {
+  Future<void> customSetVideoAsAppFullScreen(
+    BuildContext context, {
+    RouteSettings? settings,
+    bool applyOverlaysAndOrientations = true,
+    bool disposePlayer = false,
+    Duration? transitionDuration,
+    double? closedCaptionDistanceFromBottom,
+    required CustomBuildPage customBuildPage,
+  }) async {
     _fullscreen.value = true;
 
-    final route = PageRouteBuilder(
-      opaque: false,
-      fullscreenDialog: true,
-      pageBuilder: (_, __, ___) {
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            MeeduPlayerFullscreenPage(controller: this, disposePlayer: disposePlayer),
-            if (stackWidget != null) stackWidget!,
-          ],
-        );
-      },
+    await Navigator.of(context).push(
+      PlayerViewRoute.custom(
+        closedCaptionDistanceFromBottom: closedCaptionDistanceFromBottom,
+        settings: settings,
+        customBuildPage: customBuildPage,
+        transitionDuration: transitionDuration,
+        disposePlayer: disposePlayer,
+        meeduPlayerController: this,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+      ),
     );
+  }
 
-    await Navigator.of(context).push(route);
+  Future<void> setVideoAsAppFullScreen(
+    BuildContext context, {
+    bool applyOverlaysAndOrientations = true,
+    bool disposePlayer = false,
+  }) async {
+    _fullscreen.value = true;
+
+    await Navigator.of(context).push(
+      PlayerViewRoute(
+        disposePlayer: disposePlayer,
+        meeduPlayerController: this,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+      ),
+    );
   }
 
   /// launch a video using the fullscreen apge
@@ -885,27 +902,31 @@ class MeeduPlayerController {
   /// [looping]
   Future<void> launchAsFullscreen(
     BuildContext context, {
-    required DataSource dataSource,
+    required Media media,
     bool autoplay = false,
     bool looping = false,
     Widget? header,
     Widget? bottomRight,
+    PlayerConfiguration? configuration,
+    VideoControllerConfiguration? videoControllerConfiguration,
     Duration seekTo = Duration.zero,
   }) async {
     this.header = header;
     this.bottomRight = bottomRight;
     launchedAsFullScreen = true;
     setDataSource(
-      dataSource,
+      media,
       autoplay: autoplay,
       looping: looping,
+      videoControllerConfiguration: videoControllerConfiguration,
+      configuration: configuration,
       seekTo: seekTo,
     );
 
     if (!desktopOrWeb && manageBrightness) {
       getUserPreferenceForBrightness();
     }
-    await goToFullscreen(context, disposePlayer: true);
+    await goToFullscreen(context);
   }
 
   /// dispose de video_player controller
@@ -941,23 +962,25 @@ class MeeduPlayerController {
     _videoFit.close();
     _pipAvailable.close();
     isBuffering.close();
+    _streamSubscriptionPlayerPosition?.cancel();
     _pipManager.dispose();
     _lockedControls.close();
     _buffered.close();
     _closedCaptionEnabled.close();
     _mute.close();
     VolumeController().removeListener();
-
+    WakelockPlus.disable();
     _fullscreen.close();
     _showControls.close();
 
     playerStatus.status.close();
     dataStatus.status.close();
 
-    _videoPlayerController
-      ?..removeListener(_listener)
-      ..dispose();
-
+    _player?.dispose();
+    _videoPlayerController?.notifier.dispose();
+    _videoPlayerController?.id.dispose();
+    _videoPlayerController?.rect.dispose();
+    _player = null;
     _videoPlayerController = null;
   }
 
@@ -1026,7 +1049,7 @@ class MeeduPlayerController {
           }
         }
       } else {
-        Navigator.pop(context);
+        if (context.mounted) Navigator.pop(context);
       }
     }
   }
@@ -1061,7 +1084,11 @@ class MeeduPlayerController {
       customDebugPrint("setClosedCaptionFile: videoPlayerController is null");
       return;
     }
-    videoPlayerController!.setClosedCaptionFile(closedCaptionFile);
+
+    // TODO: IMPLEMENTS
+    // _player!.setSubtitleTrack(track);
+
+    // videoPlayerController!.setClosedCaptionFile(closedCaptionFile);
   }
 
   /// Sets the caption offset.
@@ -1078,7 +1105,8 @@ class MeeduPlayerController {
       customDebugPrint("setCaptionOffset: videoPlayerController is null");
       return;
     }
-    videoPlayerController!.setCaptionOffset(offset);
+    // TODO: IMPLEMENTS
+    // videoPlayerController!.setCaptionOffset(offset);
   }
 
   /// enter to picture in picture mode only Android
@@ -1101,7 +1129,7 @@ class MeeduPlayerController {
     }
     int position = 0;
 
-    position = _videoPlayerController!.value.position.inSeconds;
+    position = _player!.state.position.inSeconds;
 
     await seekTo(Duration(seconds: position + seconds));
     if (playing) {
@@ -1152,11 +1180,18 @@ class MeeduPlayerController {
       _timer?.cancel();
       pause();
       if (manageWakeLock && !UniversalPlatform.isLinux) {
-        Wakelock.disable();
+        WakelockPlus.disable();
       }
+      _streamSubscriptionPlayerPosition?.cancel();
+      _streamSubscriptionPlayerPosition = null;
 
-      _videoPlayerController?.removeListener(_listener);
-      await _videoPlayerController?.dispose();
+      _player?.dispose();
+
+      _player = null;
+
+      _videoPlayerController?.notifier.dispose();
+      _videoPlayerController?.id.dispose();
+      _videoPlayerController?.rect.dispose();
       _videoPlayerController = null;
 
       //disposeVideoPlayerController();
@@ -1170,10 +1205,10 @@ class MeeduPlayerController {
   }
 
   double getAspectRatio() {
-    if (_videoPlayerController == null) {
+    if (_player?.state.height == null || _player?.state.width == null) {
       return 16 / 9;
     }
-    return _videoPlayerController!.value.size.width / _videoPlayerController!.value.size.height;
+    return _player!.state.width! / _player!.state.height!;
   }
 
   /// enter to picture in picture mode only Android
@@ -1272,6 +1307,24 @@ class MeeduPlayerController {
   }
 
   static MeeduPlayerController of(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<MeeduPlayerProvider>()!.controller;
+    return MeeduPlayerScope.of(context).controller;
+  }
+}
+
+extension MeeduPlayerControllerExtension on MeeduPlayerController {
+  double get videoWidth {
+    final width = player?.state.width;
+
+    if (width == 0 || width == null) return 640.0;
+
+    return width.toDouble();
+  }
+
+  double get videoHeight {
+    final height = player?.state.height;
+
+    if (height == 0 || height == null) return 480.0;
+
+    return height.toDouble();
   }
 }
