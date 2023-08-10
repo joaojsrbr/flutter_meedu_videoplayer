@@ -676,7 +676,6 @@ class _ControlsContainerState extends State<ControlsContainer> {
   @override
   Widget build(BuildContext context) {
     final _ = MeeduPlayerController.of(context);
-
     return Positioned.fill(child: controlsUI(_, context));
   }
 }
