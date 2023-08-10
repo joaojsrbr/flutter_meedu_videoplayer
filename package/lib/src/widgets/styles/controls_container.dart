@@ -57,6 +57,13 @@ class _ControlsContainerState extends State<ControlsContainer> {
 
   final ValueNotifier<double> _currentBrightness = ValueNotifier<double>(1.0);
 
+  @override
+  void dispose() {
+    _currentVolume.dispose();
+    _currentBrightness.dispose();
+    super.dispose();
+  }
+
   //------------------------------------//
   void _forwardDragStart(Offset localPosition, MeeduPlayerController controller) async {
     playing = controller.playerStatus.playing;

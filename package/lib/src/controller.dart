@@ -38,8 +38,6 @@ class MeeduPlayerController {
   Player? _player;
   VideoController? _videoPlayerController;
   final _pipManager = PipManager();
-
-  final TextStyle? defaultTextStyle;
   StreamSubscription? _playerEventSubs;
   StreamSubscription<double>? _volumeEventSubs;
   StreamSubscription<Duration>? _streamSubscriptionPlayerPosition;
@@ -60,12 +58,14 @@ class MeeduPlayerController {
   /// [playerStatus] has a [status] observable
   final MeeduPlayerStatus playerStatus = MeeduPlayerStatus();
 
+  /// widget built above videoPlayer
+  final Widget? stackWidget;
+
   /// the dataStatus to notify the load sources events
   /// [dataStatus] has a [status] observable
   final MeeduPlayerDataStatus dataStatus = MeeduPlayerDataStatus();
   final Color colorTheme;
   final bool controlsEnabled;
-  final Widget? stackWidget;
   String? _errorText;
   String? get errorText => _errorText;
   Widget? loadingWidget, header, bottomRight, customControls;
@@ -79,28 +79,27 @@ class MeeduPlayerController {
   final Rx<Duration> _sliderPosition = Rx(Duration.zero);
   final Rx<Duration> _duration = Rx(Duration.zero);
   final Rx<int> _swipeDuration = 0.obs;
-  Rx<int> doubleTapCount = 0.obs;
+  final Rx<int> doubleTapCount = 0.obs;
   final Rx<double> _currentVolume = 1.0.obs;
   final Rx<double> _playbackSpeed = 1.0.obs;
   final Rx<double> _currentBrightness = 0.0.obs;
-  final Rx<List<DurationRange>> _buffered = Rx([]);
-  Rx<double> bufferedPercent = Rx(0.0);
+  final Rx<Duration> _buffered = Rx(Duration.zero);
+  final Rx<double> bufferedPercent = Rx(0.0);
   final Rx<bool> _closedCaptionEnabled = false.obs;
   final Rx<bool> _mute = false.obs;
   final Rx<bool> _fullscreen = false.obs;
   final Rx<bool> _pipAvailable = false.obs;
-
   final Rx<bool> _showControls = true.obs;
   final Rx<bool> _showSwipeDuration = false.obs;
   final Rx<bool> _showVolumeStatus = false.obs;
   final Rx<bool> _showBrightnessStatus = false.obs;
-  Rx<bool> bufferingVideoDuration = false.obs;
-
-  Rx<bool> videoFitChanged = false.obs;
+  final Rx<bool> bufferingVideoDuration = false.obs;
+  final Rx<bool> videoFitChanged = false.obs;
   final Rx<BoxFit> _videoFit;
+  final Rx<bool> rewindIcons = false.obs;
+  final Rx<bool> forwardIcons = false.obs;
   //Rx<double> scale = 1.0.obs;
-  Rx<bool> rewindIcons = false.obs;
-  Rx<bool> forwardIcons = false.obs;
+
   // NO OBSERVABLES
   bool _isSliderMoving = false;
   bool _looping = false;
@@ -110,7 +109,6 @@ class MeeduPlayerController {
   Timer? _timer;
   Timer? _timerForSeek;
   Timer? _timerForCheckingSeek;
-
   Timer? _timerForVolume;
   Timer? _timerForShowingVolume;
   Timer? _timerForGettingVolume;
@@ -118,8 +116,8 @@ class MeeduPlayerController {
   Timer? videoFitChangedTimer;
   RxReaction? _pipModeWorker;
   BuildContext? _pipContextToFullscreen;
+  VoidCallback? onVideoPlayerClosed;
 
-  void Function()? onVideoPlayerClosed;
   List<BoxFit> fits = [
     BoxFit.contain,
     BoxFit.cover,
@@ -190,8 +188,8 @@ class MeeduPlayerController {
   Stream<Duration> get onSliderPositionChanged => _sliderPosition.stream;
 
   /// [bufferedLoaded] buffered Loaded for network resources
-  Rx<List<DurationRange>> get buffered => _buffered;
-  Stream<List<DurationRange>> get onBufferedChanged => _buffered.stream;
+  Rx<Duration> get buffered => _buffered;
+  Stream<Duration> get onBufferedChanged => _buffered.stream;
 
   /// [videoPlayerController] instace of VideoPlayerController
   VideoController? get videoPlayerController => _videoPlayerController;
@@ -234,6 +232,8 @@ class MeeduPlayerController {
 
   /// stores the launch state
   bool launchedAsFullScreen = false;
+
+  final TextStyle? defaultTextStyle;
 
   /// [isInPipMode] is true if pip mode is enabled
   Rx<bool> get isInPipMode => _pipManager.isInPipMode;
@@ -444,6 +444,7 @@ class MeeduPlayerController {
     }
 
     // set the video buffered loaded
+    _buffered.value = state.buffer;
     final buffered = state.buffer;
     final lastBufferedEnd = buffered.inSeconds;
     isBuffering.value = state.playing && position.inSeconds > (lastBufferedEnd);
@@ -499,7 +500,7 @@ class MeeduPlayerController {
       // await _videoPlayerController!.initialize();
       await _player!.open(media, play: autoplay);
 
-      await Future.wait([_videoPlayerController!.waitUntilFirstFrameRendered]);
+      await _videoPlayerController!.waitUntilFirstFrameRendered;
 
       _streamSubscriptionPlayerPosition?.cancel();
       _streamSubscriptionPlayerPosition = null;
@@ -832,51 +833,67 @@ class MeeduPlayerController {
     });
   }
 
+  Future<void> _applyOverlaysAndOrientations(bool applyOverlaysAndOrientations) async {
+    if (applyOverlaysAndOrientations) {
+      if (UniversalPlatform.isWeb) {
+        await screenManager.setWebFullScreen(true, this);
+      } else {
+        if (desktopOrWeb) {
+          if (!isInPipMode.value) {
+            _screenSizeBk = await windowManager.getSize();
+          }
+          await screenManager.setWindowsFullScreen(true, this);
+        } else {
+          await screenManager.setFullScreenOverlaysAndOrientations();
+        }
+      }
+    }
+  }
+
   /// show the player in fullscreen mode
   Future<void> goToFullscreen(
     BuildContext context, {
     bool applyOverlaysAndOrientations = true,
     bool disposePlayer = false,
   }) async {
-    if (applyOverlaysAndOrientations) {
-      if (UniversalPlatform.isWeb) {
-        screenManager.setWebFullScreen(true, this);
-      } else {
-        if (desktopOrWeb) {
-          if (!isInPipMode.value) {
-            _screenSizeBk = await windowManager.getSize();
-          }
-          screenManager.setWindowsFullScreen(true, this);
-        } else {
-          screenManager.setFullScreenOverlaysAndOrientations();
-        }
-      }
+    await _applyOverlaysAndOrientations(applyOverlaysAndOrientations);
+
+    if (context.mounted) {
+      setVideoAsAppFullScreen(
+        context,
+        applyOverlaysAndOrientations: applyOverlaysAndOrientations,
+        disposePlayer: disposePlayer,
+      );
     }
-    if (context.mounted) setVideoAsAppFullScreen(context, applyOverlaysAndOrientations: applyOverlaysAndOrientations, disposePlayer: disposePlayer);
   }
 
-  Future<void> customSetVideoAsAppFullScreen(
+  Future<T?> customSetVideoAsAppFullScreen<T>(
     BuildContext context, {
-    RouteSettings? settings,
+    Object? arguments,
     bool applyOverlaysAndOrientations = true,
     bool disposePlayer = false,
     Duration? transitionDuration,
     double? closedCaptionDistanceFromBottom,
     required CustomBuildPage customBuildPage,
   }) async {
-    _fullscreen.value = true;
+    T? value;
+    if (applyOverlaysAndOrientations) await _applyOverlaysAndOrientations(applyOverlaysAndOrientations);
 
-    await Navigator.of(context).push(
-      PlayerViewRoute.custom(
-        closedCaptionDistanceFromBottom: closedCaptionDistanceFromBottom,
-        settings: settings,
-        customBuildPage: customBuildPage,
-        transitionDuration: transitionDuration,
-        disposePlayer: disposePlayer,
-        meeduPlayerController: this,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-      ),
-    );
+    _fullscreen.value = true;
+    if (context.mounted) {
+      value = await Navigator.of(context).push<T>(
+        PlayerViewRoute<T>.custom(
+          closedCaptionDistanceFromBottom: closedCaptionDistanceFromBottom,
+          settings: RouteSettings(name: 'meedu_player', arguments: arguments),
+          customBuildPage: customBuildPage,
+          transitionDuration: transitionDuration,
+          disposePlayer: disposePlayer,
+          meeduPlayerController: this,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+        ),
+      );
+    }
+    return value;
   }
 
   Future<void> setVideoAsAppFullScreen(
@@ -888,6 +905,7 @@ class MeeduPlayerController {
 
     await Navigator.of(context).push(
       PlayerViewRoute(
+        settings: const RouteSettings(name: 'meedu_player'),
         disposePlayer: disposePlayer,
         meeduPlayerController: this,
         backgroundColor: Theme.of(context).colorScheme.surface,
@@ -935,7 +953,6 @@ class MeeduPlayerController {
     _volumeEventSubs?.cancel();
     _timerForVolume?.cancel();
     _timerForShowingVolume?.cancel();
-
     _timerForGettingVolume?.cancel();
     timerForTrackingMouse?.cancel();
     _timerForSeek?.cancel();
@@ -965,7 +982,6 @@ class MeeduPlayerController {
     _streamSubscriptionPlayerPosition?.cancel();
     _pipManager.dispose();
     _lockedControls.close();
-    _buffered.close();
     _closedCaptionEnabled.close();
     _mute.close();
     VolumeController().removeListener();
@@ -1034,18 +1050,18 @@ class MeeduPlayerController {
   /// Parameters:
   ///   - fullscreen: A boolean indicating whether the application window should be in full-screen mode.
   ///   - context: A `BuildContext` object used to access the current widget tree context.
-  void setFullScreen(bool fullscreen, BuildContext context) {
+  void setFullScreen(bool fullscreen, BuildContext context) async {
     if (fullscreen) {
       goToFullscreen(context);
     } else {
       if (launchedAsFullScreen) {
         if (UniversalPlatform.isWeb) {
-          screenManager.setWebFullScreen(false, this);
+          await screenManager.setWebFullScreen(false, this);
         } else {
           if (desktopOrWeb) {
-            screenManager.setWindowsFullScreen(false, this);
+            await screenManager.setWindowsFullScreen(false, this);
           } else {
-            screenManager.setDefaultOverlaysAndOrientations();
+            await screenManager.setDefaultOverlaysAndOrientations();
           }
         }
       } else {
@@ -1079,35 +1095,37 @@ class MeeduPlayerController {
 
   ///Sets a closed caption file.
   ///If [closedCaptionFile] is null, closed captions will be removed.
-  void setClosedCaptionFile(Future<ClosedCaptionFile>? closedCaptionFile) {
+  void setClosedCaptionFile(SubtitleTrack subtitleTrack) {
     if (videoPlayerController == null) {
       customDebugPrint("setClosedCaptionFile: videoPlayerController is null");
       return;
     }
+    _player?.setSubtitleTrack(subtitleTrack);
 
-    // TODO: IMPLEMENTS
     // _player!.setSubtitleTrack(track);
 
     // videoPlayerController!.setClosedCaptionFile(closedCaptionFile);
   }
 
-  /// Sets the caption offset.
-  ///
-  /// The [offset] will be used when getting the correct caption for a specific position.
-  /// The [offset] can be positive or negative.
-  ///
-  /// The values will be handled as follows:
-  /// *  0: This is the default behavior. No offset will be applied.
-  /// * >0: The caption will have a negative offset. So you will get caption text from the past.
-  /// * <0: The caption will have a positive offset. So you will get caption text from the future.
-  void setCaptionOffset(Duration offset) {
-    if (videoPlayerController == null) {
-      customDebugPrint("setCaptionOffset: videoPlayerController is null");
-      return;
-    }
-    // TODO: IMPLEMENTS
-    // videoPlayerController!.setCaptionOffset(offset);
-  }
+  // / Sets the caption offset.
+  // /
+  // / The [offset] will be used when getting the correct caption for a specific position.
+  // / The [offset] can be positive or negative.
+  // /
+  // / The values will be handled as follows:
+  // / *  0: This is the default behavior. No offset will be applied.
+  // / * >0: The caption will have a negative offset. So you will get caption text from the past.
+  // / * <0: The caption will have a positive offset. So you will get caption text from the future.
+  // void setCaptionOffset(Duration offset) {
+  //   if (videoPlayerController == null) {
+  //     customDebugPrint("setCaptionOffset: videoPlayerController is null");
+  //     return;
+  //   }
+  //   _player.state.track.subtitl
+
+  //
+  //   // videoPlayerController!.setCaptionOffset(offset);
+  // }
 
   /// enter to picture in picture mode only Android
   ///
@@ -1132,10 +1150,7 @@ class MeeduPlayerController {
     position = _player!.state.position.inSeconds;
 
     await seekTo(Duration(seconds: position + seconds));
-    if (playing) {
-      await play();
-    }
-    //
+    if (playing) await play();
   }
 
   /*

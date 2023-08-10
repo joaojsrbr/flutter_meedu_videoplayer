@@ -1,9 +1,9 @@
 import 'package:auto_orientation/auto_orientation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_meedu_videoplayer/meedu_player.dart';
+import 'package:fullscreen_window/fullscreen_window.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:fullscreen_window/fullscreen_window.dart';
 
 class ScreenManager {
   /// [orientations] the device orientation after exit of the fullscreen
@@ -31,8 +31,7 @@ class ScreenManager {
   /// set the default orientations and overlays after exit of fullscreen
   Future<void> setDefaultOverlaysAndOrientations() async {
     await SystemChrome.setPreferredOrientations(orientations);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-        overlays: overlays);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: overlays);
     if (UniversalPlatform.isIOS) {
       AutoOrientation.portraitAutoMode();
     }
@@ -70,24 +69,19 @@ class ScreenManager {
   Future<void> setOverlays(bool visible) async {
     if (hideSystemOverlay) {
       if (visible) {
-        await SystemChrome.setEnabledSystemUIMode(
-            systemUiMode ?? SystemUiMode.immersive,
-            overlays: overlays);
+        await SystemChrome.setEnabledSystemUIMode(systemUiMode ?? SystemUiMode.immersive, overlays: overlays);
       } else {
         //customDebugPrint("Closed2");
-        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-            overlays: []);
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
       }
     }
   }
 
   /// hide the statusBar and the navigation bar, set only landscape mode only if forceLandScapeInFullscreen is true
   Future<void> setFullScreenOverlaysAndOrientations({
-    hideOverLays = true,
+    bool hideOverLays = true,
   }) async {
-    forceLandScapeInFullscreen
-        ? AutoOrientation.landscapeAutoMode(forceSensor: true)
-        : AutoOrientation.fullAutoMode();
+    forceLandScapeInFullscreen ? AutoOrientation.landscapeAutoMode(forceSensor: true) : AutoOrientation.fullAutoMode();
 
     if (hideOverLays) {
       setOverlays(false);

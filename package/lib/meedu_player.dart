@@ -3,12 +3,10 @@ library meedu_player;
 export 'package:flutter_meedu/ui.dart';
 export 'package:media_kit/media_kit.dart';
 export 'package:media_kit_video/media_kit_video.dart';
-export 'package:video_player/video_player.dart';
 
 export 'src/controller.dart';
 export 'src/helpers/custom_callbacks.dart';
 export 'src/helpers/custom_icons.dart';
-export 'src/helpers/data_source.dart';
 export 'src/helpers/durations.dart';
 export 'src/helpers/enabled_buttons.dart';
 export 'src/helpers/enabled_controls.dart';

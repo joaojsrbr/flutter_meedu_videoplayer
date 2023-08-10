@@ -8,7 +8,7 @@ typedef CustomBuildPage = Widget Function(
   MeeduVideoPlayer meeduVideoPlayer,
 );
 
-class PlayerViewRoute extends PopupRoute<PlayerViewRoute> {
+class PlayerViewRoute<T> extends PageRoute<T> {
   final MeeduPlayerController meeduPlayerController;
   final bool disposePlayer;
   final Color backgroundColor;
@@ -21,6 +21,8 @@ class PlayerViewRoute extends PopupRoute<PlayerViewRoute> {
     required this.meeduPlayerController,
     required this.backgroundColor,
     required this.disposePlayer,
+    super.allowSnapshotting,
+    super.fullscreenDialog,
   })  : _customBuildPage = null,
         _customTransitionDuration = null,
         _closedCaptionDistanceFromBottom = null;
@@ -30,6 +32,8 @@ class PlayerViewRoute extends PopupRoute<PlayerViewRoute> {
     required this.meeduPlayerController,
     required this.backgroundColor,
     required this.disposePlayer,
+    super.allowSnapshotting,
+    super.fullscreenDialog,
     double? closedCaptionDistanceFromBottom,
     Duration? transitionDuration,
     required CustomBuildPage customBuildPage,
@@ -44,18 +48,15 @@ class PlayerViewRoute extends PopupRoute<PlayerViewRoute> {
   bool get barrierDismissible => true;
 
   @override
-  String? get barrierLabel => 'video_dismiss';
+  String? get barrierLabel => 'meedu_dismiss';
 
   @override
-  bool didPop(PlayerViewRoute? result) {
-    meeduPlayerController.customDebugPrint("disposed");
-    if (disposePlayer) {
-      meeduPlayerController.videoPlayerClosed();
-    } else {
-      meeduPlayerController.onFullscreenClose();
-    }
+  bool didPop(T? result) {
+    if (disposePlayer) meeduPlayerController.customDebugPrint("disposed");
+    Future.wait([
+      if (disposePlayer) meeduPlayerController.videoPlayerClosed() else meeduPlayerController.onFullscreenClose(),
+    ]).whenComplete(() => meeduPlayerController.launchedAsFullScreen = false);
 
-    meeduPlayerController.launchedAsFullScreen = false;
     return super.didPop(result);
   }
 
@@ -76,48 +77,35 @@ class PlayerViewRoute extends PopupRoute<PlayerViewRoute> {
 
   static final GlobalKey _meeduRouteKey = GlobalKey();
 
+  late final _meeduVideoPlayer = MeeduVideoPlayer.route(
+    key: _meeduRouteKey,
+    closedCaptionDistanceFromBottom: _closedCaptionDistanceFromBottom ?? 40,
+    backgroundColor: backgroundColor,
+    controller: meeduPlayerController,
+  );
+
   @override
   Widget buildPage(
     BuildContext context,
     Animation<double> animation,
     Animation<double> secondaryAnimation,
   ) {
-    final meeduVideoPlayer = MeeduVideoPlayer.route(
-      key: _meeduRouteKey,
-      closedCaptionDistanceFromBottom: _closedCaptionDistanceFromBottom ?? 40,
-      backgroundColor: backgroundColor,
-      controller: meeduPlayerController,
-    );
-
     if (_customBuildPage != null) {
-      return _customBuildPage!.call(context, animation, secondaryAnimation, meeduVideoPlayer);
+      return Material(
+        child: _customBuildPage!.call(
+          context,
+          animation,
+          secondaryAnimation,
+          _meeduVideoPlayer,
+        ),
+      );
     }
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        final Animation<double> curvedAnimation = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeInOutCubicEmphasized,
-          reverseCurve: Curves.easeInOutCubicEmphasized.flipped,
-        );
-        return FadeTransition(
-          opacity: curvedAnimation,
-          child: Material(
-            color: backgroundColor,
-            child: Stack(
-              clipBehavior: Clip.none,
-              fit: StackFit.expand,
-              children: [
-                meeduVideoPlayer,
-                if (meeduPlayerController.stackWidget != null) meeduPlayerController.stackWidget!,
-              ],
-            ),
-          ),
-        );
-      },
+
+    return Material(
+      child: _meeduVideoPlayer,
     );
   }
 
   @override
-  Duration get transitionDuration => _customTransitionDuration ?? const Duration(milliseconds: 750);
+  Duration get transitionDuration => _customTransitionDuration ?? const Duration(milliseconds: 300);
 }
