@@ -25,6 +25,7 @@ class LoggingActionDispatcher extends ActionDispatcher {
 typedef CustomBuilder = Widget Function(BuildContext context, MeeduPlayerController controller, Responsive responsive);
 typedef CustomIconsBuilder = CustomIcons Function(Responsive responsive);
 typedef CaptionViewBuilder = Widget Function(BuildContext context, MeeduPlayerController controller, Responsive responsive, String text);
+typedef VideoOverlayBuilder = Widget Function(BuildContext context, MeeduPlayerController controller, Responsive responsive);
 
 class MeeduVideoPlayer extends StatefulWidget {
   final MeeduPlayerController controller;
@@ -61,10 +62,14 @@ class MeeduVideoPlayer extends StatefulWidget {
 
   final bool _isRoute;
 
+  ///[videoOverlay] can be used to wrap the player in any widget, to apply custom gestures, or apply custom watermarks
+  final VideoOverlayBuilder? videoOverlay;
+
   const MeeduVideoPlayer({
     super.key,
     required this.controller,
     this.header,
+    this.videoOverlay,
     this.focusNode,
     this.bottomRight,
     this.customIcons,
@@ -82,6 +87,7 @@ class MeeduVideoPlayer extends StatefulWidget {
   })  : _isRoute = true,
         focusNode = null,
         header = null,
+        videoOverlay = null,
         customCaptionView = null,
         customControls = null,
         bottomRight = null,
@@ -92,109 +98,135 @@ class MeeduVideoPlayer extends StatefulWidget {
 }
 
 class _MeeduVideoPlayerState extends State<MeeduVideoPlayer> {
+  final GlobalKey _layoutKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget._isRoute) _onInit();
+  }
+
+  @override
+  void didUpdateWidget(covariant MeeduVideoPlayer oldWidget) {
+    if (!widget._isRoute) _didUpdate(oldWidget);
+    super.didUpdateWidget(oldWidget);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return CallbackShortcuts(
-      bindings: activatorsToCallBacks(widget.controller, context),
-      child: Focus(
-        focusNode: widget.focusNode,
-        autofocus: true,
-        child: MeeduPlayerScope(
-          controller: widget.controller,
-          child: ColoredBox(
-            color: widget.backgroundColor,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final MeeduPlayerController _ = widget.controller;
-                if (_.controlsEnabled) {
-                  _.responsive.setDimensions(
-                    constraints.maxWidth,
-                    constraints.maxHeight,
-                  );
-                }
-
-                if (widget.customIcons != null) {
-                  _.customIcons = widget.customIcons!(_.responsive);
-                }
-
-                if (widget.header != null) {
-                  _.header = widget.header!(context, _, _.responsive);
-                }
-
-                if (widget.bottomRight != null) {
-                  _.bottomRight = widget.bottomRight!(context, _, _.responsive);
-                }
-
-                if (widget.customControls != null) {
-                  _.customControls = widget.customControls!(context, _, _.responsive);
-                }
-
-                return ExcludeFocus(
+    return MeeduPlayerScope(
+      controller: widget.controller,
+      child: CallbackShortcuts(
+        bindings: activatorsToCallBacks(widget.controller, context),
+        child: Focus(
+          focusNode: widget.focusNode,
+          autofocus: true,
+          child: LayoutBuilder(
+            key: _layoutKey,
+            builder: (context, constraints) {
+              final MeeduPlayerController _ = MeeduPlayerScope.controllerOf(context);
+              if (_.controlsEnabled && _.responsive.setNewDimensions(constraints)) {
+                customDebugPrint('setNewConstraints');
+                _.responsive.setDimensions(constraints.maxWidth, constraints.maxHeight);
+              }
+              return ColoredBox(
+                color: widget.backgroundColor,
+                child: ExcludeFocus(
                   excluding: _.excludeFocus,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      RxBuilder(
-                        //observables: [_.videoFit],
-                        (__) {
-                          _.dataStatus.status.value;
-                          _.customDebugPrint("Fit is ${widget.controller.videoFit.value}");
-                          // customDebugPrint(
-                          //     "constraints.maxWidth ${constraints.maxWidth}");
-                          // _.customDebugPrint(
-                          //     "width ${videoWidth(_.videoPlayerController, constraints.maxWidth)}");
-                          // customDebugPrint(
-                          //     "videoPlayerController ${_.videoPlayerController}");
-                          Widget videoWidget = const SizedBox.shrink();
+                  child: RxBuilder(
+                    //observables: [_.videoFit],
+                    (__) {
+                      _.dataStatus.status.value;
+                      customDebugPrint("Fit is ${widget.controller.videoFit.value}");
+                      // customDebugPrint(
+                      //     "constraints.maxWidth ${constraints.maxWidth}");
+                      // _.customDebugPrint(
+                      //     "width ${videoWidth(_.videoPlayerController, constraints.maxWidth)}");
+                      // customDebugPrint(
+                      //     "videoPlayerController ${_.videoPlayerController}");
+                      Widget videoWidget = const SizedBox.shrink();
 
-                          bool visible = true;
+                      bool visible = true;
 
-                          if (!widget._isRoute) {
-                            visible = !_.fullscreen.value;
-                          }
+                      if (!widget._isRoute) visible = !_.fullscreen.value;
 
-                          if (_.videoPlayerController != null) {
-                            return Visibility.maintain(
-                              visible: visible,
-                              child: IgnorePointer(
-                                child: Video(
-                                  aspectRatio: 16 / 9,
-                                  controls: (state) => const SizedBox.shrink(),
-                                  pauseUponEnteringBackgroundMode: false,
-                                  fit: _.videoFit.value,
-                                  controller: _.videoPlayerController!,
-                                ),
-                              ),
-                            );
-                          }
-
-                          return Positioned.fill(
-                            child: SizedBox(
-                              width: _.videoWidth,
-                              height: _.videoHeight,
-                              child: videoWidget,
+                      if (_.videoPlayerController != null) {
+                        videoWidget = Visibility.maintain(
+                          visible: visible,
+                          child: Video(
+                            aspectRatio: 16 / 9,
+                            controls: (state) => Stack(
+                              fit: StackFit.expand,
+                              alignment: Alignment.center,
+                              children: [
+                                if (_.controlsEnabled && _.controlsStyle == ControlsStyle.primary)
+                                  PrimaryVideoPlayerControls(responsive: _.responsive)
+                                else if (_.controlsEnabled && _.controlsStyle == ControlsStyle.primaryList)
+                                  PrimaryListVideoPlayerControls(responsive: _.responsive)
+                                else if (_.controlsEnabled && _.controlsStyle == ControlsStyle.secondary)
+                                  SecondaryVideoPlayerControls(responsive: _.responsive)
+                                else if (_.controlsEnabled && _.controlsStyle == ControlsStyle.custom && _.customControls != null)
+                                  ControlsContainer(responsive: _.responsive, child: _.customControls!),
+                                if (_.videoOverlay != null) _.videoOverlay!,
+                              ],
                             ),
-                          );
-                        },
-                      ),
-                      if (_.controlsEnabled && _.controlsStyle == ControlsStyle.primary)
-                        PrimaryVideoPlayerControls(responsive: _.responsive)
-                      else if (_.controlsEnabled && _.controlsStyle == ControlsStyle.primaryList)
-                        PrimaryListVideoPlayerControls(responsive: _.responsive)
-                      else if (_.controlsEnabled && _.controlsStyle == ControlsStyle.secondary)
-                        SecondaryVideoPlayerControls(responsive: _.responsive)
-                      else if (_.controlsEnabled && _.controlsStyle == ControlsStyle.custom && _.customControls != null)
-                        ControlsContainer(responsive: _.responsive, child: _.customControls!),
-                      if (_.stackWidget != null) _.stackWidget!,
-                    ],
+                            pauseUponEnteringBackgroundMode: false,
+                            fit: _.videoFit.value,
+                            controller: _.videoPlayerController!,
+                          ),
+                        );
+                      }
+
+                      return SizedBox(
+                        width: _.videoWidth,
+                        height: _.videoHeight,
+                        child: videoWidget,
+                      );
+                    },
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),
     );
+  }
+
+  void _onInit() {
+    if (widget.customIcons != null) {
+      widget.controller.customIcons = widget.customIcons!(widget.controller.responsive);
+    }
+    if (widget.header != null) {
+      widget.controller.header = widget.header!(context, widget.controller, widget.controller.responsive);
+    }
+    if (widget.bottomRight != null) {
+      widget.controller.bottomRight = widget.bottomRight!(context, widget.controller, widget.controller.responsive);
+    }
+    if (widget.videoOverlay != null) {
+      widget.controller.videoOverlay = widget.videoOverlay!(context, widget.controller, widget.controller.responsive);
+    }
+    if (widget.customControls != null) {
+      widget.controller.customControls = widget.customControls!(context, widget.controller, widget.controller.responsive);
+    }
+  }
+
+  void _didUpdate(MeeduVideoPlayer oldWidget) {
+    if (widget.customIcons != oldWidget.customControls) {
+      widget.controller.customIcons = widget.customIcons!(widget.controller.responsive);
+    }
+    if (widget.header != oldWidget.header) {
+      widget.controller.header = widget.header!(context, widget.controller, widget.controller.responsive);
+    }
+    if (widget.bottomRight != oldWidget.bottomRight) {
+      widget.controller.bottomRight = widget.bottomRight!(context, widget.controller, widget.controller.responsive);
+    }
+    if (widget.videoOverlay != oldWidget.videoOverlay) {
+      widget.controller.videoOverlay = widget.videoOverlay!(context, widget.controller, widget.controller.responsive);
+    }
+    if (widget.customControls != oldWidget.customControls) {
+      widget.controller.customControls = widget.customControls!(context, widget.controller, widget.controller.responsive);
+    }
   }
 }
 
@@ -207,12 +239,13 @@ class MeeduPlayerScope extends InheritedWidget {
     required this.controller,
   }) : super(key: key, child: child);
 
-  static MeeduPlayerScope? maybeOf(BuildContext context) {
+  static MeeduPlayerScope? _maybeOf(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<MeeduPlayerScope>();
   }
 
-  static MeeduPlayerScope of(BuildContext context) {
-    final MeeduPlayerScope? result = maybeOf(context);
+  static MeeduPlayerController controllerOf(BuildContext context) {
+    MeeduPlayerController? result = _maybeOf(context)?.controller;
+    result ??= context.findAncestorStateOfType<_MeeduVideoPlayerState>()?.widget.controller;
     assert(result != null, 'No MeeduPlayerScope found in context');
     return result!;
   }

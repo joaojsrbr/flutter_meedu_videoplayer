@@ -9,14 +9,8 @@ class PrimaryBottomControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _ = MeeduPlayerController.of(context);
-    final textStyle = _.defaultTextStyle?.copyWith(
-          fontSize: responsive.fontSize(),
-        ) ??
-        TextStyle(
-          color: Colors.white,
-          fontSize: responsive.fontSize(),
-        );
+    final _ = MeeduPlayerScope.controllerOf(context);
+    final textStyle = _.defaultTextStyle.copyWith(fontSize: responsive.fontSize());
     Widget durationControls = Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, mainAxisSize: MainAxisSize.min, children: [
@@ -56,9 +50,9 @@ class PrimaryBottomControls extends StatelessWidget {
         )
     ]);
     return Positioned(
-      left: 5,
-      right: 0,
-      bottom: 20,
+      left: 6,
+      right: 6,
+      bottom: !_.fullscreen.value ? 20 : 12,
       child: (responsive.height / responsive.width > 1)
           ? Wrap(
               crossAxisAlignment: WrapCrossAlignment.center,

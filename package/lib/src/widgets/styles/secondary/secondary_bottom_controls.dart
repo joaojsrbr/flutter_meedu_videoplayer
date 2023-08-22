@@ -9,14 +9,8 @@ class SecondaryBottomControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _ = MeeduPlayerController.of(context);
-    final textStyle = _.defaultTextStyle?.copyWith(
-          fontSize: responsive.fontSize(),
-        ) ??
-        TextStyle(
-          color: Colors.white,
-          fontSize: responsive.fontSize(),
-        );
+    final _ = MeeduPlayerScope.controllerOf(context);
+    final textStyle = _.defaultTextStyle.copyWith(fontSize: responsive.fontSize());
 
     return Positioned(
       left: 0,
@@ -59,20 +53,6 @@ class SecondaryBottomControls extends StatelessWidget {
                       );
                     },
                   ),
-                  // PlayerButton(
-                  //   onPressed: _.rewind,
-                  //   size: buttonsSize,
-                  //   iconColor: Colors.white,
-                  //   backgrounColor: Colors.transparent,
-                  //   iconPath: 'assets/icons/rewind.png',
-                  // ),
-                  // PlayerButton(
-                  //   onPressed: _.fastForward,
-                  //   iconColor: Colors.white,
-                  //   backgrounColor: Colors.transparent,
-                  //   size: buttonsSize,
-                  //   iconPath: 'assets/icons/fast-forward.png',
-                  // ),
                   const SizedBox(width: 5),
                 ],
               ),

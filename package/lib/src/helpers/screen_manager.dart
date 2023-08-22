@@ -59,7 +59,7 @@ class ScreenManager {
       FullScreenWindow.setFullScreen(state);
     } catch (e) {
       if (e.toString().contains("Document not active")) {
-        _.customDebugPrint("Document not active ignored");
+        customDebugPrint("Document not active ignored");
       } else {
         rethrow;
       }

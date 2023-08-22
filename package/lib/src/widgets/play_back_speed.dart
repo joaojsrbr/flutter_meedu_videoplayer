@@ -4,26 +4,23 @@ import 'package:flutter_meedu_videoplayer/meedu_player.dart';
 class PlayBackSpeedButton extends StatelessWidget {
   final Responsive responsive;
   final TextStyle textStyle;
-  const PlayBackSpeedButton(
-      {Key? key, required this.responsive, required this.textStyle})
-      : super(key: key);
+  const PlayBackSpeedButton({Key? key, required this.responsive, required this.textStyle}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final _ = MeeduPlayerController.of(context);
+    final _ = MeeduPlayerScope.controllerOf(context);
     return RxBuilder(
         //observables: [_.fullscreen],
-        (__) {
+        (context) {
       return TextButton(
-        style: TextButton.styleFrom(
-          padding: EdgeInsets.all(responsive.buttonSize() * 0.25),
-        ),
+        style: TextButton.styleFrom(),
         onPressed: () {
-          _.customDebugPrint("s");
+          customDebugPrint("togglePlaybackSpeed");
           _.togglePlaybackSpeed();
 
           _.controls = true;
         },
+        onLongPress: () async {},
         child: Text(
           _.playbackSpeed.toString(),
           style: textStyle,

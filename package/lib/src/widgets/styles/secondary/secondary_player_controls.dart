@@ -9,7 +9,7 @@ class SecondaryVideoPlayerControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _ = MeeduPlayerController.of(context);
+    final _ = MeeduPlayerScope.controllerOf(context);
     return ControlsContainer(
       responsive: responsive,
       child: SafeArea(

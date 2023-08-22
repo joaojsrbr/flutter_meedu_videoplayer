@@ -1,13 +1,16 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:math';
+
+import 'package:flutter/material.dart';
 
 /// A utility class that helps make the UI responsive by defining the size of
 /// icons, buttons, and text relative to the screen size.
 class Responsive {
   /// The width of the screen.
-  late double width;
+  double width;
 
   /// The height of the screen.
-  late double height;
+  double height;
 
   /// The diagonal size of the screen in inches.
   late double inch;
@@ -44,7 +47,8 @@ class Responsive {
     this.maxIconsSize = 60,
     this.buttonsSizeRelativeToScreen = 8,
     this.maxButtonsSize = 60,
-  });
+  })  : width = 0,
+        height = 0;
 
   /// Sets the screen dimensions.
   void setDimensions(
@@ -87,5 +91,9 @@ class Responsive {
   /// Converts a percentage of the screen height into logical pixels.
   double hp(double percent) {
     return height * percent / 100;
+  }
+
+  bool setNewDimensions(BoxConstraints constraints) {
+    return constraints.maxHeight != height || constraints.maxWidth != width;
   }
 }

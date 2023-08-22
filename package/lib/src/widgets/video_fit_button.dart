@@ -7,19 +7,15 @@ class VideoFitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _ = MeeduPlayerController.of(context);
-    String iconPath = 'assets/icons/fit.png';
-    Widget? customIcon = _.customIcons.videoFit;
+    final _ = MeeduPlayerScope.controllerOf(context);
+    final Widget customIcon = _.customIcons.videoFit;
 
     return PlayerButton(
       size: responsive.buttonSize(),
       circle: false,
-      backgroundColor: Colors.transparent,
-      iconColor: Colors.white,
-      iconPath: iconPath,
       customIcon: customIcon,
       onPressed: () {
-        _.customDebugPrint("toggleVideoFit");
+        customDebugPrint("toggleVideoFit");
         _.toggleVideoFit();
       },
     );

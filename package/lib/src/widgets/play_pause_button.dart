@@ -7,7 +7,7 @@ class PlayPauseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _ = MeeduPlayerController.of(context);
+    final _ = MeeduPlayerScope.controllerOf(context);
     return RxBuilder(
       //observables: [
       //  _.playerStatus.status,
@@ -28,18 +28,13 @@ class PlayPauseButton extends StatelessWidget {
         //   );
         // }
 
-        String iconPath = 'assets/icons/repeat.png';
-        Widget? customIcon = _.customIcons.repeat;
+        Widget customIcon = _.customIcons.repeat;
         if (_.playerStatus.playing) {
-          iconPath = 'assets/icons/pause.png';
           customIcon = _.customIcons.pause;
         } else if (_.playerStatus.paused) {
-          iconPath = 'assets/icons/play.png';
           customIcon = _.customIcons.play;
         }
         return PlayerButton(
-          backgroundColor: Colors.transparent,
-          iconColor: Colors.white,
           onPressed: () {
             if (_.playerStatus.playing) {
               _.pause();
@@ -50,7 +45,6 @@ class PlayPauseButton extends StatelessWidget {
             }
           },
           size: size,
-          iconPath: iconPath,
           customIcon: customIcon,
         );
       },

@@ -1,6 +1,5 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:async';
-import 'dart:developer' as dev;
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -17,6 +16,8 @@ import 'package:universal_platform/universal_platform.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
+
+export 'package:flutter_meedu_videoplayer/src/helpers/custom_log.dart';
 
 /// An enumeration of the different styles that can be applied to controls, such
 /// as buttons and icons and layouts.
@@ -41,6 +42,7 @@ class MeeduPlayerController {
   StreamSubscription? _playerEventSubs;
   StreamSubscription<double>? _volumeEventSubs;
   StreamSubscription<Duration>? _streamSubscriptionPlayerPosition;
+  StreamSubscription<Duration>? _streamSubscriptionPlayerBuffer;
 
   /// Screen Manager to define the overlays and device orientation when the player enters in fullscreen mode
   final ScreenManager screenManager;
@@ -59,7 +61,7 @@ class MeeduPlayerController {
   final MeeduPlayerStatus playerStatus = MeeduPlayerStatus();
 
   /// widget built above videoPlayer
-  final Widget? stackWidget;
+  Widget? videoOverlay;
 
   /// the dataStatus to notify the load sources events
   /// [dataStatus] has a [status] observable
@@ -128,6 +130,9 @@ class MeeduPlayerController {
   ];
 
   Player? get player => _player;
+
+  /// if the player should show Logs
+  static bool showLogs = false;
 
   /// use this stream to listen the player data events like none, loading, loaded, error
   Stream<DataStatus> get onDataStatusChanged => dataStatus.status.stream;
@@ -227,13 +232,10 @@ class MeeduPlayerController {
   /// if the player should manage Brightness
   final bool manageBrightness;
 
-  /// if the player should show Logs
-  final bool showLogs;
-
   /// stores the launch state
   bool launchedAsFullScreen = false;
 
-  final TextStyle? defaultTextStyle;
+  final TextStyle defaultTextStyle;
 
   /// [isInPipMode] is true if pip mode is enabled
   Rx<bool> get isInPipMode => _pipManager.isInPipMode;
@@ -300,15 +302,15 @@ class MeeduPlayerController {
   /// [manageWakeLock] if the player should use wakelock
   /// [errorText] message to show when the load process failed
   MeeduPlayerController({
-    this.stackWidget,
-    this.defaultTextStyle,
+    this.videoOverlay,
+    this.defaultTextStyle = const TextStyle(color: Colors.white),
     this.screenManager = const ScreenManager(),
     this.colorTheme = Colors.redAccent,
     Widget? loadingWidget,
     this.controlsEnabled = true,
     this.manageWakeLock = true,
     this.manageBrightness = true,
-    this.showLogs = true,
+    bool showLogs = true,
     this.excludeFocus = true,
     this.autoHideControls = true,
     String? errorText,
@@ -317,7 +319,7 @@ class MeeduPlayerController {
     this.bottomRight,
     this.fits = const [BoxFit.contain, BoxFit.cover, BoxFit.fill, BoxFit.fitHeight, BoxFit.fitWidth, BoxFit.scaleDown],
     this.pipEnabled = false,
-    this.customIcons = const CustomIcons(),
+    this.customIcons = CustomIcons.defaultIcons,
     this.enabledButtons = const EnabledButtons(),
     this.enabledControls = const EnabledControls(),
     this.enabledOverlays = const EnabledOverlays(),
@@ -327,6 +329,8 @@ class MeeduPlayerController {
     this.onVideoPlayerClosed,
     BoxFit? initialFit,
   }) : _videoFit = Rx(initialFit ?? BoxFit.fill) {
+    // ignore: prefer_initializing_formals
+    MeeduPlayerController.showLogs = showLogs;
     if (responsive != null) {
       this.responsive = responsive;
     }
@@ -357,6 +361,7 @@ class MeeduPlayerController {
     if (!desktopOrWeb && enabledControls.volumeSwipes) {
       _volumeEventSubs = VolumeController().listener((newVolume) {
         volume.value = newVolume;
+        player?.setVolume(newVolume * 100);
       });
     }
 
@@ -401,12 +406,6 @@ class MeeduPlayerController {
     _videoPlayerController = VideoController(_player!, configuration: videoControllerConfiguration ?? _defaultVideoControllerConfiguration);
   }
 
-  void customDebugPrint(Object? object, {Object? error, StackTrace? stackTracer}) {
-    if (showLogs) {
-      dev.log(object.toString(), name: "flutter_meedu_videoplayer", stackTrace: stackTracer, error: error);
-    }
-  }
-
   /// initialize the video_player controller and load the data source
   Future _initializePlayer({
     Duration seekTo = Duration.zero,
@@ -431,30 +430,35 @@ class MeeduPlayerController {
     }
   }
 
+  void _bufferListener(Duration position) {
+    final state = _player?.state;
+    if (state == null) return;
+
+    _buffered.value = position;
+
+    // Calculate the buffered percentage relative to the total video duration
+    // Update the buffered percentage value
+    bufferedPercent.value = _position.value.inSeconds / duration.value.inSeconds;
+  }
+
   void _listener(Duration position) async {
     final state = _player?.state;
     if (state == null) return;
     //update duration
+
     duration.value = state.duration;
     // set the current video position
-
     _position.value = position;
-    if (!_isSliderMoving) {
-      _sliderPosition.value = position;
-    }
+
+    if (!_isSliderMoving) _sliderPosition.value = position;
 
     // set the video buffered loaded
-    _buffered.value = state.buffer;
     final buffered = state.buffer;
     final lastBufferedEnd = buffered.inSeconds;
     isBuffering.value = state.playing && position.inSeconds > (lastBufferedEnd);
 
     //respect the native is buffering flag
     isBuffering.value = isBuffering.value || state.buffering;
-
-    // Calculate the buffered percentage relative to the total video duration
-    // Update the buffered percentage value
-    bufferedPercent.value = lastBufferedEnd / duration.value.inSeconds;
 
     // save the volume value
     final volume = state.volume;
@@ -504,6 +508,9 @@ class MeeduPlayerController {
 
       _streamSubscriptionPlayerPosition?.cancel();
       _streamSubscriptionPlayerPosition = null;
+      _streamSubscriptionPlayerBuffer?.cancel();
+      _streamSubscriptionPlayerBuffer = null;
+
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await oldPlayer?.dispose();
       });
@@ -519,8 +526,10 @@ class MeeduPlayerController {
       dataStatus.status.value = DataStatus.loaded;
 
       await _initializePlayer(seekTo: seekTo);
+      await player!.setVolume(await VolumeController().getVolume() * 100);
 
       _streamSubscriptionPlayerPosition = _player!.stream.position.listen(_listener);
+      _streamSubscriptionPlayerBuffer = _player!.stream.buffer.listen(_bufferListener);
     } catch (e, s) {
       customDebugPrint(e, error: e, stackTracer: s);
 
@@ -688,9 +697,7 @@ class MeeduPlayerController {
   ///
   /// [enabled] if is true the video player is muted
   Future<void> setMute(bool enabled) async {
-    if (enabled) {
-      _volumeBeforeMute = _player!.state.volume;
-    }
+    if (enabled) _volumeBeforeMute = _player!.state.volume / 100;
     _mute.value = enabled;
     await setVolume(enabled ? 0 : _volumeBeforeMute, videoPlayerVolume: true);
   }
@@ -756,8 +763,8 @@ class MeeduPlayerController {
     if (volumeNew >= 0.0 && volumeNew <= 1.0) {
       volume.value = volumeNew;
       if (desktopOrWeb || videoPlayerVolume) {
-        customDebugPrint("volume is $volumeNew");
-        _player?.setVolume(volumeNew);
+        customDebugPrint("volume is ${volumeNew * 100}");
+        _player!.setVolume(volumeNew * 100);
         // await _videoPlayerController?.setVolume(volumeNew);
         volumeUpdated();
       } else {
@@ -980,6 +987,7 @@ class MeeduPlayerController {
     _pipAvailable.close();
     isBuffering.close();
     _streamSubscriptionPlayerPosition?.cancel();
+    _streamSubscriptionPlayerBuffer?.cancel();
     _pipManager.dispose();
     _lockedControls.close();
     _closedCaptionEnabled.close();
@@ -1199,6 +1207,8 @@ class MeeduPlayerController {
       }
       _streamSubscriptionPlayerPosition?.cancel();
       _streamSubscriptionPlayerPosition = null;
+      _streamSubscriptionPlayerBuffer?.cancel();
+      _streamSubscriptionPlayerBuffer = null;
 
       _player?.dispose();
 
@@ -1258,15 +1268,10 @@ class MeeduPlayerController {
     double defaultH = max(MediaQuery.of(context).size.height * 0.30, 400);
 
     double aspectRatio = getAspectRatio();
+    final size = _screenSizeBk ?? Size(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height / 2);
     _desktopPipBk = DesktopPipBk(
       isFullScreen: await windowManager.isFullScreen(),
-      size: await windowManager.isFullScreen()
-          ? (_screenSizeBk ??
-              Size(
-                MediaQuery.of(context).size.width / 2,
-                MediaQuery.of(context).size.height / 2,
-              ))
-          : await windowManager.getSize(),
+      size: await windowManager.isFullScreen() ? size : await windowManager.getSize(),
     );
 
     await onFullscreenClose();
@@ -1321,8 +1326,9 @@ class MeeduPlayerController {
     _pipManager.isInPipMode.value = false;
   }
 
-  static MeeduPlayerController of(BuildContext context) {
-    return MeeduPlayerScope.of(context).controller;
+  static MeeduPlayerController controllerOf(BuildContext context) {
+    final MeeduPlayerController result = MeeduPlayerScope.controllerOf(context);
+    return result;
   }
 }
 

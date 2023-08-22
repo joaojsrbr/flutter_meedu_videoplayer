@@ -7,7 +7,7 @@ class PipButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _ = MeeduPlayerController.of(context);
+    final _ = MeeduPlayerScope.controllerOf(context);
     return RxBuilder(
         // observables: [
         //   _.pipAvailable,
@@ -15,18 +15,11 @@ class PipButton extends StatelessWidget {
         // ],
         (__) {
       if (!_.pipAvailable.value) return const SizedBox.shrink();
-      String iconPath = 'assets/icons/picture-in-picture.png';
-      Widget? customIcon = _.customIcons.pip;
-      if (_.isInPipMode.value) {
-        iconPath = 'assets/icons/exit_picture-in-picture.png';
-        customIcon = _.customIcons.exitPip;
-      }
+      Widget customIcon = _.customIcons.pip;
+      if (_.isInPipMode.value) customIcon = _.customIcons.exitPip;
       return PlayerButton(
         size: responsive.buttonSize(),
         circle: false,
-        backgroundColor: Colors.transparent,
-        iconColor: Colors.white,
-        iconPath: iconPath,
         customIcon: customIcon,
         onPressed: () => _.isInPipMode.value ? _.closePip(context) : _.enterPip(context),
       );

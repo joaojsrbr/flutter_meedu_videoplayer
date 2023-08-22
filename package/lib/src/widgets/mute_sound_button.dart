@@ -7,24 +7,17 @@ class MuteSoundButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _ = MeeduPlayerController.of(context);
+    final _ = MeeduPlayerScope.controllerOf(context);
     return RxBuilder(
         //observables: [_.mute, _.fullscreen],
         (__) {
-      String iconPath = 'assets/icons/mute.png';
-      Widget? customIcon = _.customIcons.mute;
+      Widget customIcon = _.customIcons.mute;
 
-      if (!_.mute.value) {
-        iconPath = 'assets/icons/sound.png';
-        customIcon = _.customIcons.sound;
-      }
+      if (!_.mute.value) customIcon = _.customIcons.sound;
 
       return PlayerButton(
         size: responsive.buttonSize(),
         circle: false,
-        backgroundColor: Colors.transparent,
-        iconColor: Colors.white,
-        iconPath: iconPath,
         customIcon: customIcon,
         onPressed: () {
           _.setMute(!_.mute.value);

@@ -82,7 +82,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
       _.controls = !_.showControls.value;
       _tappedOnce?.cancel();
       _tappedOnce = Timer(const Duration(milliseconds: 300), () {
-        _.customDebugPrint("set tapped twice to false");
+        customDebugPrint("set tapped twice to false");
         tappedTwice = false;
         //_dragInitialDelta = Offset.zero;
       });
@@ -118,7 +118,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
     _doubleTapToSeekTimer = Timer(const Duration(milliseconds: 500), () {
       playing = controller.playerStatus.playing;
       controller.videoSeekToNextSeconds(_defaultSeekAmount * controller.doubleTapCount.value, playing);
-      controller.customDebugPrint("set tapped Twice to false");
+      customDebugPrint("set tapped Twice to false");
       tappedTwice = false;
       controller.rewindIcons.value = false;
       controller.forwardIcons.value = false;
@@ -150,7 +150,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
     double diff = _verticalDragStartOffset.dy - localPosition.dy;
     double volume = (diff / 500) + _onDragStartVolume;
     if (volume >= 0 && volume <= 1 && differenceOfExists((controller.volume.value * 100).round(), (volume * 100).round(), 2)) {
-      controller.customDebugPrint("Volume $volume");
+      customDebugPrint("Volume $volume");
       //customDebugPrint("current ${(controller.volume.value*100).round()}");
       //customDebugPrint("new ${(volume*100).round()}");
       controller.setVolume(volume);
@@ -196,7 +196,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
     //customDebugPrint((controller.brightness.value*100).round());
     //customDebugPrint((brightness*100).round());
     if (brightness >= 0 && brightness <= 1 && differenceOfExists((controller.brightness.value * 100).round(), (brightness * 100).round(), 2)) {
-      controller.customDebugPrint("brightness $brightness");
+      customDebugPrint("brightness $brightness");
       //brightness
       controller.setBrightness(brightness);
     }
@@ -285,11 +285,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
                               ),
                               Container(
                                 padding: const EdgeInsets.all(5),
-                                child: _.customIcons.volume ??
-                                    const Icon(
-                                      Icons.music_note,
-                                      color: Colors.white,
-                                    ),
+                                child: _.customIcons.volume,
                               ),
                             ],
                           ),
@@ -333,11 +329,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
                               ),
                               Container(
                                 padding: const EdgeInsets.all(5),
-                                child: _.customIcons.brightness ??
-                                    const Icon(
-                                      Icons.wb_sunny,
-                                      color: Colors.white,
-                                    ),
+                                child: _.customIcons.brightness,
                               ),
                             ],
                           ),
@@ -418,7 +410,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
             (__) {
           _.dataStatus.status.value;
           if (_.dataStatus.loading || _.isBuffering.value) {
-            return Center(child: _.loadingWidget);
+            return SafeArea(child: Center(child: _.loadingWidget));
           }
           return const SizedBox.shrink();
         }),
@@ -477,7 +469,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
           _forwardDragStart(position, _);
           _dragInitialDelta = delta;
         } else {
-          _.customDebugPrint("##############out###############");
+          customDebugPrint("##############out###############");
           gettingNotification = true;
         }
       } else {
@@ -511,7 +503,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
 
       final Offset position = details.localPosition;
       if (_dragInitialDelta == Offset.zero) {
-        _.customDebugPrint(details.localPosition.dy);
+        customDebugPrint(details.localPosition.dy);
         if (details.localPosition.dy > widget.responsive.height * 0.1 &&
             ((widget.responsive.height - details.localPosition.dy) > widget.responsive.height * 0.1) &&
             !gettingNotification) {
@@ -531,7 +523,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
             //customDebugPrint("left");
           }
         } else {
-          _.customDebugPrint("getting Notification");
+          customDebugPrint("getting Notification");
           gettingNotification = true;
         }
         //}
@@ -598,62 +590,64 @@ class _ControlsContainerState extends State<ControlsContainer> {
       child: AnimatedContainer(
         duration: _.durations.controlsDuration,
         color: _.showControls.value ? Colors.black26 : Colors.transparent,
-        child: Stack(
-          children: [
-            if (_.enabledControls.doubleTapToSeek && (_.mobileControls) && !_.lockedControls.value)
-              Positioned.fill(
-                bottom: widget.responsive.height * 0.20,
-                top: widget.responsive.height * 0.20,
-                child: VideoCoreForwardAndRewindLayout(
-                  responsive: widget.responsive,
-                  rewind: GestureDetector(
-                    // behavior: HitTestBehavior.translucent,
-                    onTap: () {
-                      if (_.doubleTapCount.value != 0 || tappedTwice) {
-                        _rewind(context, _);
-                        tappedOnce(_, true);
-                      } else {
-                        tappedOnce(_, false);
-                      }
-                    },
-                  ),
-                  forward: GestureDetector(
-                    // behavior: HitTestBehavior.translucent,
-                    onTap: () {
-                      if (_.doubleTapCount.value != 0 || tappedTwice) {
-                        _forward(context, _);
-                        tappedOnce(_, true);
-                      } else {
-                        tappedOnce(_, false);
-                      }
-                    },
-                    //behavior: HitTestBehavior.,
+        child: SafeArea(
+          child: Stack(
+            children: [
+              if (_.enabledControls.doubleTapToSeek && (_.mobileControls) && !_.lockedControls.value)
+                Positioned.fill(
+                  bottom: widget.responsive.height * 0.20,
+                  top: widget.responsive.height * 0.20,
+                  child: VideoCoreForwardAndRewindLayout(
+                    responsive: widget.responsive,
+                    rewind: GestureDetector(
+                      // behavior: HitTestBehavior.translucent,
+                      onTap: () {
+                        if (_.doubleTapCount.value != 0 || tappedTwice) {
+                          _rewind(context, _);
+                          tappedOnce(_, true);
+                        } else {
+                          tappedOnce(_, false);
+                        }
+                      },
+                    ),
+                    forward: GestureDetector(
+                      // behavior: HitTestBehavior.translucent,
+                      onTap: () {
+                        if (_.doubleTapCount.value != 0 || tappedTwice) {
+                          _forward(context, _);
+                          tappedOnce(_, true);
+                        } else {
+                          tappedOnce(_, false);
+                        }
+                      },
+                      //behavior: HitTestBehavior.,
+                    ),
                   ),
                 ),
-              ),
-            AnimatedOpacity(
-              opacity: (!_.showControls.value || _.lockedControls.value) ? 0 : 1,
-              duration: _.durations.controlsDuration,
-              child: IgnorePointer(
-                ignoring: (!_.showControls.value || _.lockedControls.value),
-                child: SafeArea(child: widget.child),
-              ),
-            ),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: AnimatedOpacity(
-                opacity: !(_.showControls.value && _.lockedControls.value) ? 0 : 1,
+              AnimatedOpacity(
+                opacity: (!_.showControls.value || _.lockedControls.value) ? 0 : 1,
                 duration: _.durations.controlsDuration,
-                child: Padding(
-                  padding: const EdgeInsets.all(30.0),
-                  child: IgnorePointer(
-                    ignoring: !(_.showControls.value && _.lockedControls.value),
-                    child: LockButton(responsive: _.responsive),
+                child: IgnorePointer(
+                  ignoring: (!_.showControls.value || _.lockedControls.value),
+                  child: widget.child,
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: AnimatedOpacity(
+                  opacity: !(_.showControls.value && _.lockedControls.value) ? 0 : 1,
+                  duration: _.durations.controlsDuration,
+                  child: Padding(
+                    padding: const EdgeInsets.all(30.0),
+                    child: IgnorePointer(
+                      ignoring: !(_.showControls.value && _.lockedControls.value),
+                      child: LockButton(responsive: _.responsive),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -662,7 +656,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
 
   @override
   Widget build(BuildContext context) {
-    final _ = MeeduPlayerController.of(context);
+    final _ = MeeduPlayerScope.controllerOf(context);
 
     return Positioned.fill(child: controlsUI(_, context));
   }

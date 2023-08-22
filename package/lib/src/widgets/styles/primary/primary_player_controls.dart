@@ -9,7 +9,7 @@ class PrimaryVideoPlayerControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _ = MeeduPlayerController.of(context);
+    final _ = MeeduPlayerScope.controllerOf(context);
 
     return ControlsContainer(
       responsive: responsive,
@@ -23,7 +23,7 @@ class PrimaryVideoPlayerControls extends StatelessWidget {
               right: 0,
               top: 0,
               child: Padding(
-                padding: const EdgeInsets.only(top: 10.0),
+                padding: const EdgeInsets.only(top: 8, right: 6, left: 6),
                 child: _.header!,
               ),
             ),
@@ -39,9 +39,6 @@ class PrimaryVideoPlayerControls extends StatelessWidget {
                 PlayerButton(
                   onPressed: _.rewind,
                   size: responsive.iconSize(),
-                  iconColor: Colors.white,
-                  backgroundColor: Colors.transparent,
-                  iconPath: 'assets/icons/rewind.png',
                   customIcon: _.customIcons.rewind,
                 ),
                 const SizedBox(width: 10),
@@ -70,10 +67,7 @@ class PrimaryVideoPlayerControls extends StatelessWidget {
                 const SizedBox(width: 10),
                 PlayerButton(
                   onPressed: _.fastForward,
-                  iconColor: Colors.white,
-                  backgroundColor: Colors.transparent,
                   size: responsive.iconSize(),
-                  iconPath: 'assets/icons/fast-forward.png',
                   customIcon: _.customIcons.fastForward,
                 ),
               ]

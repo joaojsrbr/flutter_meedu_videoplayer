@@ -7,23 +7,16 @@ class FullscreenButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _ = MeeduPlayerController.of(context);
+    final _ = MeeduPlayerScope.controllerOf(context);
     return RxBuilder(
       //observables: [_.fullscreen],
       (__) {
-        String iconPath = 'assets/icons/minimize.png';
-        Widget? customIcon = _.customIcons.minimize;
+        Widget customIcon = _.customIcons.minimize;
 
-        if (!_.fullscreen.value) {
-          iconPath = 'assets/icons/fullscreen.png';
-          customIcon = _.customIcons.fullscreen;
-        }
+        if (!_.fullscreen.value) customIcon = _.customIcons.fullscreen;
         return PlayerButton(
           size: size,
           circle: false,
-          backgroundColor: Colors.transparent,
-          iconColor: Colors.white,
-          iconPath: iconPath,
           customIcon: customIcon,
           onPressed: () {
             _.toggleFullScreen(context);

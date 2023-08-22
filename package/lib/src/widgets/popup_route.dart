@@ -52,7 +52,7 @@ class PlayerViewRoute<T> extends PageRoute<T> {
 
   @override
   bool didPop(T? result) {
-    if (disposePlayer) meeduPlayerController.customDebugPrint("disposed");
+    if (disposePlayer) customDebugPrint("disposed");
     Future.wait([
       if (disposePlayer) meeduPlayerController.videoPlayerClosed() else meeduPlayerController.onFullscreenClose(),
     ]).whenComplete(() => meeduPlayerController.launchedAsFullScreen = false);
