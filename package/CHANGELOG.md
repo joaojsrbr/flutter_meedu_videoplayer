@@ -1,3 +1,17 @@
+## 4.3.0+1
+* fixed slider shifting
+
+## 4.3.0
+* migrating from media_kit due to it crashing apps when used in the package
+* using fvp for desktop and maybe replaced on mobile if people want 
+## 4.2.27
+* migrate to video_player_cross_platform to avoid issues with media_kit
+## 4.2.26
+* media_kit windows version to 1.0.6
+* media_kit linux version to 1.1.0
+
+## 4.2.25
+* set media_kit to 1.1.2+1 to avoid crash on launch
 ## 4.2.24
 * Added videoOverlay to help with wrapping widget in both normal and fullScreen
 ## 4.2.23
