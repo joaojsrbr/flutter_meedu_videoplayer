@@ -13,7 +13,7 @@ class PlayerSlider extends StatelessWidget {
         final int value = _.sliderPosition.value.inSeconds;
 
         final double max = _.duration.value.inSeconds.toDouble();
-        if (value > max || max <= 0) return const SizedBox.shrink();
+        //if (value > max || max <= 0) return const SizedBox.shrink();
         return Container(
           constraints: const BoxConstraints(maxHeight: 30),
           padding: const EdgeInsets.only(bottom: 8),
